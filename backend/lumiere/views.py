@@ -1,275 +1,87 @@
-# backend/lumiere/services.py
 import logging
-from typing import Any, Dict, List, Optional
+import re
 
-import requests
-from django.conf import settings
-from django.db.models import Q
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status, throttling
 
-from candles.models import Candle
+from .serializers import LumiereReplyInSerializer, LumiereReplyOutSerializer
+from .services import search_candles, get_candle_by_slug, build_store_context, call_openai_reply
 
 logger = logging.getLogger(__name__)
 
-HISTORY_WINDOW = 10
+_CATALOG_URL_RE = re.compile(
+    r"(?:https?://(?:www\.)?kfcandle\.com)?/catalog/([a-z0-9]+(?:-[a-z0-9]+)*)",
+    re.IGNORECASE,
+)
 
 
-def _t(locale: str, en: str, ru: str, es: str, fr: str) -> str:
-    if locale == "ru":
-        return ru
-    if locale == "es":
-        return es
-    if locale == "fr":
-        return fr
-    return en
+def extract_slug_from_text(text: str) -> str | None:
+    """Return the first candle slug found in a URL inside the user message, or None."""
+    match = _CATALOG_URL_RE.search(text)
+    if match:
+        return match.group(1)
+    return None
 
 
-def _candle_to_dict(c: Candle) -> Dict[str, Any]:
-    """Serialize a Candle instance to a dict for Lumière context."""
-    return {
-        "id": c.id,
-        "name": c.name,
-        "slug": c.slug,
-        "price": str(c.price) if c.price is not None else "N/A",
-        "in_stock": bool(c.in_stock),
-        # Include description so the AI can answer questions about the candle
-        "description": (c.description or "").strip(),
-    }
+class LumiereAnonThrottle(throttling.AnonRateThrottle):
+    scope = "lumiere_anon"
 
 
-def get_candle_by_slug(slug: str) -> Optional[Dict[str, Any]]:
-    """Look up a single candle by its slug. Returns None if not found."""
-    try:
-        candle = Candle.objects.get(slug=slug)
-        return _candle_to_dict(candle)
-    except Candle.DoesNotExist:
-        return None
+class LumiereUserThrottle(throttling.UserRateThrottle):
+    scope = "lumiere_user"
 
 
-def search_candles(query: str, limit: int = 6) -> List[Dict[str, Any]]:
-    """Full-text search across name and description."""
-    q = (query or "").strip()
-    if not q:
-        return []
+class LumiereReplyView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [LumiereAnonThrottle, LumiereUserThrottle]
 
-    qs = (
-        Candle.objects.filter(Q(name__icontains=q) | Q(description__icontains=q))
-        .select_related("category")
-        .order_by("-created_at")[:limit]
-    )
+    def post(self, request):
+        ser = LumiereReplyInSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
 
-    return [_candle_to_dict(c) for c in qs]
+        text = data["text"]
+        locale = data.get("locale", "en")
+        user_name = (data.get("userName") or "").strip() or None
+        history = data.get("history", [])
 
+        # If user sent a catalog URL — look up that exact candle by slug
+        slug = extract_slug_from_text(text)
+        if slug:
+            candle = get_candle_by_slug(slug)
+            suggestions = [candle] if candle else search_candles(text, limit=6)
+        else:
+            suggestions = search_candles(text, limit=6)
 
-def build_store_context(suggestions: List[Dict[str, Any]]) -> str:
-    """
-    Build a context block that the AI uses to answer questions.
-    When a specific candle is looked up by slug we include its full description
-    so Lumière can answer detailed questions about that candle.
-    """
-    if not suggestions:
-        return "CATALOG SEARCH: No matching products found for this query."
+        store_context = build_store_context(suggestions)
 
-    # Single candle looked up by slug — give the AI full detail
-    if len(suggestions) == 1:
-        c = suggestions[0]
-        stock = "✓ In stock" if c["in_stock"] else "✗ Out of stock"
-        desc = c.get("description") or "No description available."
-        return (
-            "PRODUCT DETAIL (user is asking about this specific candle):\n"
-            f"  Name: {c['name']}\n"
-            f"  Price: ${c['price']}\n"
-            f"  Stock: {stock}\n"
-            f"  Slug: {c['slug']}\n"
-            f"  Description:\n    {desc}\n"
-        )
-
-    # Multiple results — show list
-    lines = ["CATALOG SEARCH RESULTS (use these and only these to recommend):"]
-    for s in suggestions:
-        stock = "✓ In stock" if s["in_stock"] else "✗ Out of stock"
-        desc_short = (s.get("description") or "")[:120]
-        if desc_short:
-            desc_short = f" | {desc_short}…"
-        lines.append(
-            f"  • {s['name']} — ${s['price']} — {stock} — slug: {s['slug']}{desc_short}"
-        )
-    return "\n".join(lines)
-
-
-def _build_instructions(locale: str, user_name: Optional[str]) -> str:
-    name_note = (
-        f"The customer's name is {user_name}. Use it naturally, not in every message."
-        if user_name
-        else "The customer hasn't shared their name yet."
-    )
-
-    return f"""You are Lumière — a sophisticated, warm sales consultant at a premium handmade candle boutique.
-You are NOT a generic chatbot. You are an expert who genuinely loves candles and knows everything about them.
-
-{name_note}
-Customer locale: {locale}. Always reply in that language.
-
-═══ YOUR EXPERTISE ═══
-You know deeply about:
-- Scent families: floral, woody, citrus, oriental, fresh, gourmand, green
-- Burn time, wax types (soy, beeswax, paraffin, coconut), wick materials
-- Mood & occasion pairing (relaxation, romance, focus, energy, grief, celebration)
-- Gifting (who is it for, what's their personality, what's the occasion)
-- Candle care (first burn, trimming wicks, avoiding tunneling)
-- Seasonal and home styling with candles
-
-═══ WHEN A SPECIFIC PRODUCT IS PROVIDED ═══
-If PRODUCT DETAIL is given in the context, the customer is asking about that exact candle.
-- Use the description to answer questions about scent, mood, ingredients, burn time, etc.
-- Be enthusiastic and specific — reference actual details from the description.
-- You can still offer to help them pick a size or answer follow-up questions.
-- Never say the product is not in the catalog if it appears in PRODUCT DETAIL.
-
-═══ YOUR SALES APPROACH ═══
-1. DIAGNOSE before recommending. Ask 1 targeted question to understand:
-   - The occasion (gift vs. self-use? celebration, relaxation, daily ambiance?)
-   - Scent preference (light/fresh vs. rich/warm? any dislikes or allergies?)
-   - Context (living room, bedroom, bathroom, office? day or evening use?)
-
-2. PAINT A PICTURE when recommending. Don't just say "this candle is nice."
-   Say: "This one opens with bergamot, then settles into warm sandalwood —
-   perfect for winding down after a long day."
-
-3. GUIDE NATURALLY toward purchase:
-   - Mention stock scarcity when relevant ("This one sells out fast")
-   - Suggest complementary products when appropriate
-   - If something is out of stock, pivot to the best available alternative
-
-4. REMEMBER the conversation. Build on what the customer already told you.
-   Don't ask again what you've already learned.
-
-5. HANDLE objections warmly:
-   - "Too expensive" → focus on burn hours / cost per hour, gifting value
-   - "Not sure" → ask one more question to narrow it down
-   - "Just browsing" → invite them to share what mood they're in
-
-═══ HARD RULES ═══
-- ONLY recommend products from the CATALOG SEARCH RESULTS or PRODUCT DETAIL below
-- Never invent products, prices, or stock status
-- Keep replies focused: 2-5 sentences unless describing a scent profile
-- Ask maximum ONE clarifying question per reply
-- If catalog has no match, say so honestly and ask a question to find a better match
-- Never be pushy. Be the consultant customers wish every store had.
-"""
-
-
-def _extract_text_from_responses_api(payload: Dict[str, Any]) -> str:
-    output_text = payload.get("output_text")
-    if isinstance(output_text, str) and output_text.strip():
-        return output_text.strip()
-
-    text_parts: List[str] = []
-    output = payload.get("output", [])
-
-    if isinstance(output, list):
-        for item in output:
-            if not isinstance(item, dict):
-                continue
-            if item.get("type") == "message":
-                content = item.get("content", [])
-                if isinstance(content, list):
-                    for c in content:
-                        if not isinstance(c, dict):
-                            continue
-                        if c.get("type") in ("output_text", "text"):
-                            t = c.get("text")
-                            if isinstance(t, str) and t.strip():
-                                text_parts.append(t.strip())
-
-    return "\n".join(text_parts).strip()
-
-
-def call_openai_reply(
-    *,
-    locale: str,
-    user_name: Optional[str],
-    user_text: str,
-    store_context: str,
-    history: Optional[List[Dict[str, str]]] = None,
-) -> str:
-    api_key = (getattr(settings, "OPENAI_API_KEY", "") or "").strip()
-    model = (getattr(settings, "OPENAI_MODEL", "") or "gpt-4.1-mini").strip()
-    timeout_s = int(getattr(settings, "OPENAI_TIMEOUT_SECONDS", 25))
-
-    if not api_key:
-        return _t(
-            locale,
-            "AI is not configured on the server yet (OPENAI_API_KEY missing).",
-            "AI пока не настроен на сервере (нет OPENAI_API_KEY).",
-            "La IA aún no está configurada en el servidor (falta OPENAI_API_KEY).",
-            "L'IA n'est pas encore configurée sur le serveur (OPENAI_API_KEY manquant).",
-        )
-
-    instructions = _build_instructions(locale, user_name)
-
-    history_lines: List[str] = []
-    if history:
-        recent = history[-HISTORY_WINDOW:]
-        for msg in recent:
-            role_label = "Customer" if msg.get("role") == "user" else "Lumière"
-            history_lines.append(f"{role_label}: {msg.get('text', '').strip()}")
-
-    history_block = ""
-    if history_lines:
-        history_block = "CONVERSATION SO FAR:\n" + "\n".join(history_lines) + "\n\n"
-
-    full_input = (
-        f"{history_block}"
-        f"{store_context}\n\n"
-        f"Customer: {user_text}\n\n"
-        "Lumière:"
-    )
-
-    payload = {
-        "model": model,
-        "instructions": instructions,
-        "input": full_input,
-        "temperature": 0.75,
-    }
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        resp = requests.post(
-            "https://api.openai.com/v1/responses",
-            headers=headers,
-            json=payload,
-            timeout=timeout_s,
-        )
-        resp.raise_for_status()
-
-        data = resp.json()
-        final_text = _extract_text_from_responses_api(data)
-
-        if not final_text:
-            final_text = _t(
-                locale,
-                "Sorry — I couldn't generate a reply. Try rephrasing your request.",
-                "Извини — я не смогла сформировать ответ. Попробуй перефразировать запрос.",
-                "Lo siento — no pude generar una respuesta. Intenta reformular tu solicitud.",
-                "Désolée — je n'ai pas pu générer de réponse. Essaie de reformuler ta demande.",
+        try:
+            answer_text = call_openai_reply(
+                locale=locale,
+                user_name=user_name,
+                user_text=text,
+                store_context=store_context,
+                history=history,
+            )
+        except Exception:
+            logger.exception("Lumiere reply failed")
+            answer_text = (
+                "Sorry, something went wrong. Please try again."
+                if locale == "en"
+                else "Извини, что-то пошло не так. Попробуй ещё раз."
+                if locale == "ru"
+                else "Lo siento, algo salió mal. Por favor, inténtalo de nuevo."
+                if locale == "es"
+                else "Désolée, quelque chose s'est mal passé. Veuillez réessayer."
             )
 
-        return final_text
+        out = {"text": answer_text}
+        if suggestions:
+            out["suggestions"] = suggestions
 
-    except requests.HTTPError:
-        status_code = getattr(resp, "status_code", None)
-        body = ""
-        try:
-            body = resp.text[:1500]
-        except Exception:
-            body = "<no body>"
-        logger.exception("OpenAI HTTP error (%s): %s", status_code, body)
-        raise
+        out_ser = LumiereReplyOutSerializer(data=out)
+        out_ser.is_valid(raise_exception=True)
 
-    except Exception:
-        logger.exception("OpenAI request failed (unexpected).")
-        raise
+        return Response(out_ser.data, status=status.HTTP_200_OK)
