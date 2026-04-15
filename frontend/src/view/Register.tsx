@@ -7,7 +7,7 @@ import { useAppDispatch } from "../store/hooks";
 import { setCredentials } from "../store/authSlice";
 import { notifyAuthChanged } from "../utils/token";
 
-import { registerThenLoginWithProfile } from "../services/auth";
+import { registerThenLoginWithProfile } from "../api/auth";
 
 import "../styles/Register.css";
 

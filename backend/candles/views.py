@@ -1,188 +1,187 @@
-from django.db.models import Q
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
-from rest_framework.decorators import action
+from django.db import transaction
+from rest_framework import generics, permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from .filters import CandleFilter
-from .models import (
-    AboutGalleryItem,
-    AboutReviewItem,
-    Candle,
-    Category,
-    Collection,
-)
-from .permissions import IsStaffOrReadOnly
-from .serializers import (
-    AboutGalleryItemSerializer,
-    AboutReviewItemSerializer,
-    CandleSerializer,
-    CategorySerializer,
-    CollectionSerializer,
-)
+from candles.models import CandleVariant
+from .models import Cart, CartItem
+from .serializers import CartSerializer, CartItemSerializer, MergeCartSerializer
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    search_fields = ["name", "slug"]
-    filter_backends = [filters.SearchFilter]
-    permission_classes = [IsStaffOrReadOnly]
-
-
-class CollectionViewSet(viewsets.ModelViewSet):
-    queryset = Collection.objects.select_related("parent").prefetch_related("children")
-    serializer_class = CollectionSerializer
-    search_fields = ["name", "slug"]
-    filter_backends = [filters.SearchFilter]
-    permission_classes = [IsStaffOrReadOnly]
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-
-        root = (self.request.query_params.get("root") or "").strip()
-        parent = (self.request.query_params.get("parent") or "").strip()
-
-        if root == "1":
-            return qs.filter(parent__isnull=True).order_by("name")
-
-        if parent:
-            if parent.isdigit():
-                return qs.filter(parent_id=int(parent)).order_by("name")
-            return qs.filter(parent__slug__iexact=parent).order_by("name")
-
-        return qs.order_by("name")
-
-    @action(detail=True, methods=["get"])
-    def detail(self, request, pk=None):
-        collection = self.get_object()
-
-        candles_qs = (
-            Candle.objects.select_related("category")
-            .prefetch_related(
-                "collections",
-                "images",
-                "variants",
-                "offers",
-                "direct_offers",
-            )
-            .distinct()
-        )
-
-        if collection.parent_id is None:
-            child_ids = list(collection.children.values_list("id", flat=True))
-            candles = candles_qs.filter(
-                Q(collections=collection) | Q(collections__in=child_ids)
-            ).distinct()
-        else:
-            candles = candles_qs.filter(collections=collection).distinct()
-
-        serializer = CandleSerializer(
-            candles,
-            many=True,
-            context={"request": request},
-        )
-        return Response(serializer.data)
-
-
-class CandleViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Candle.objects.select_related("category")
-        .prefetch_related(
-            "collections",
-            "images",
-            "variants",
-            "offers",
-            "direct_offers",
-        )
-        .all()
+def _get_or_create_cart(user):
+    cart, _ = Cart.objects.get_or_create(user=user)
+    return (
+        Cart.objects
+        .prefetch_related("items__variant__candle")
+        .get(pk=cart.pk)
     )
-    serializer_class = CandleSerializer
-    lookup_field = "slug"
-    permission_classes = [IsStaffOrReadOnly]
 
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-    ]
-    filterset_class = CandleFilter
 
-    search_fields = [
-        "name",
-        "description",
-        "slug",
-        "collections__name",
-        "category__name",
-    ]
-    ordering_fields = ["price", "created_at", "name"]
-    ordering = ["-created_at"]
+class MyCartAPIView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartSerializer
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["request"] = self.request
-        return context
+    def get_object(self):
+        return _get_or_create_cart(self.request.user)
 
-    @action(detail=True, methods=["get"])
-    def collection_scents(self, request, slug=None):
-        candle = self.get_object()
 
-        child_collection = candle.collections.filter(parent__isnull=False).first()
+class AddCartItemAPIView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartItemSerializer
 
-        if not child_collection:
-            child_collection = candle.collections.filter(parent__isnull=True).first()
+    def create(self, request, *args, **kwargs):
+        cart = _get_or_create_cart(request.user)
 
-        if not child_collection:
-            return Response([])
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        sibling_candles = (
-            Candle.objects.select_related("category")
-            .prefetch_related(
-                "collections",
-                "images",
-                "variants",
-                "offers",
-                "direct_offers",
+        variant = serializer.validated_data["variant"]
+        qty = serializer.validated_data.get("quantity", 1)
+        is_gift = bool(serializer.validated_data.get("is_gift", False))
+
+        if not variant.is_active:
+            raise ValidationError({"variant_id": "This variant is not active."})
+
+        if variant.stock_qty < qty:
+            raise ValidationError({"quantity": "Not enough stock for this variant."})
+
+        item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            variant=variant,
+            defaults={"quantity": qty, "is_gift": is_gift},
+        )
+
+        if not created:
+            new_qty = item.quantity + qty
+            if variant.stock_qty < new_qty:
+                raise ValidationError({"quantity": "Not enough stock for this variant."})
+            item.quantity = new_qty
+            item.is_gift = is_gift
+            item.save(update_fields=["quantity", "is_gift"])
+
+        cart = _get_or_create_cart(request.user)
+        return Response(CartSerializer(cart).data, status=status.HTTP_201_CREATED)
+
+
+class UpdateCartItemAPIView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartItemSerializer
+
+    def patch(self, request, *args, **kwargs):
+        cart = _get_or_create_cart(request.user)
+        item_id = kwargs.get("item_id")
+
+        try:
+            item = CartItem.objects.select_related("variant", "variant__candle").get(
+                id=item_id,
+                cart=cart,
             )
-            .filter(collections=child_collection)
-            .exclude(id=candle.id)
-            .distinct()
-            .order_by("name")
+        except CartItem.DoesNotExist:
+            return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        qty = request.data.get("quantity", item.quantity)
+        is_gift = request.data.get("is_gift", item.is_gift)
+
+        try:
+            qty = int(qty)
+        except (TypeError, ValueError):
+            raise ValidationError({"quantity": "Quantity must be an integer."})
+
+        if qty <= 0:
+            item.delete()
+            cart = _get_or_create_cart(request.user)
+            return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
+
+        if item.variant.stock_qty < qty:
+            raise ValidationError({"quantity": "Not enough stock for this variant."})
+
+        item.quantity = qty
+        item.is_gift = bool(is_gift)
+        item.save(update_fields=["quantity", "is_gift"])
+
+        cart = _get_or_create_cart(request.user)
+        return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
+
+
+class RemoveCartItemAPIView(generics.DestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        cart = _get_or_create_cart(request.user)
+        item_id = kwargs.get("item_id")
+
+        CartItem.objects.filter(id=item_id, cart=cart).delete()
+        cart = _get_or_create_cart(request.user)
+        return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
+
+
+class MergeCartAPIView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MergeCartSerializer
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        cart = _get_or_create_cart(request.user)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        items = serializer.validated_data["items"]
+
+        merged: dict[int, dict[str, int | bool]] = {}
+
+        for item in items:
+            variant_id = int(item["variant_id"])
+            qty = int(item["quantity"])
+            is_gift = bool(item.get("is_gift", False))
+
+            if variant_id not in merged:
+                merged[variant_id] = {"quantity": 0, "is_gift": False}
+
+            merged[variant_id]["quantity"] = int(merged[variant_id]["quantity"]) + qty
+            merged[variant_id]["is_gift"] = bool(merged[variant_id]["is_gift"]) or is_gift
+
+        variant_ids = list(merged.keys())
+        variants = (
+            CandleVariant.objects
+            .select_for_update()
+            .select_related("candle")
+            .filter(id__in=variant_ids)
         )
+        variant_map = {variant.id: variant for variant in variants}
 
-        serializer = CandleSerializer(
-            sibling_candles,
-            many=True,
-            context={"request": request},
-        )
-        return Response(serializer.data)
+        if len(variant_map) != len(variant_ids):
+            missing = sorted(set(variant_ids) - set(variant_map.keys()))
+            raise ValidationError({"items": f"Some variant_id do not exist: {missing}"})
 
+        for variant_id, payload in merged.items():
+            variant = variant_map[variant_id]
+            qty = int(payload["quantity"])
+            is_gift = bool(payload["is_gift"])
 
-class AboutGalleryItemViewSet(viewsets.ModelViewSet):
-    serializer_class = AboutGalleryItemSerializer
-    permission_classes = [IsStaffOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "slug", "caption"]
-    ordering_fields = ["sort_order", "created_at", "title"]
-    ordering = ["sort_order", "-created_at", "id"]
+            if not variant.is_active:
+                raise ValidationError(
+                    {"items": f"Variant is inactive: {variant.candle.name} / {variant.size}"}
+                )
 
-    def get_queryset(self):
-        qs = AboutGalleryItem.objects.all()
-        if self.request.user.is_staff:
-            return qs.order_by("sort_order", "-created_at", "id")
-        return qs.filter(is_active=True).order_by("sort_order", "-created_at", "id")
+            existing = CartItem.objects.filter(cart=cart, variant=variant).first()
+            final_qty = qty + (existing.quantity if existing else 0)
 
+            if variant.stock_qty < final_qty:
+                raise ValidationError(
+                    {"items": f"Not enough stock for: {variant.candle.name} / {variant.size}"}
+                )
 
-class AboutReviewItemViewSet(viewsets.ModelViewSet):
-    serializer_class = AboutReviewItemSerializer
-    permission_classes = [IsStaffOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "customer_name", "caption"]
-    ordering_fields = ["sort_order", "created_at", "customer_name", "title"]
-    ordering = ["sort_order", "-created_at", "id"]
+            if existing:
+                existing.quantity = final_qty
+                existing.is_gift = existing.is_gift or is_gift
+                existing.save(update_fields=["quantity", "is_gift"])
+            else:
+                CartItem.objects.create(
+                    cart=cart,
+                    variant=variant,
+                    quantity=qty,
+                    is_gift=is_gift,
+                )
 
-    def get_queryset(self):
-        qs = AboutReviewItem.objects.all()
-        if self.request.user.is_staff:
-            return qs.order_by("sort_order", "-created_at", "id")
-        return qs.filter(is_active=True).order_by("sort_order", "-created_at", "id")
+        cart = _get_or_create_cart(request.user)
+        return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)

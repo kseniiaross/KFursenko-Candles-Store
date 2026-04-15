@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { getCandleBySlug, getCollectionScentsBySlug } from "../services/candles";
+import { getCandleBySlug, getCollectionScentsBySlug } from "../api/candles";
 import { useAppDispatch } from "../store/hooks";
 import { addToCart } from "../store/cartSlice";
 

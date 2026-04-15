@@ -9,7 +9,7 @@ import type {
   Note,
   Season,
   Occasion,
-} from "../services/recommendation";
+} from "../api/recommendation";
 
 import "../styles/RecommendationQuiz.css";
 

@@ -1,4 +1,3 @@
-// frontend/src/services/content.ts
 import api from "../api/axiosInstance";
 import type { AboutGalleryItem, AboutReviewItem } from "../types/content";
 

@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-import { lumiereReply } from "../services/lumiere";
+import { lumiereReply } from "../api/lumiere";
 import type {
   Locale,
   LumiereHistoryMessage,

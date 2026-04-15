@@ -4,6 +4,8 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./view/Header";
 import Footer from "./view/Footer";
 import SizeModal from "./components/SizeModal";
+import PrivateRoute from "./components/PrivateRoute";
+
 import Home from "./view/Home";
 import Catalog from "./view/Catalog";
 import CatalogDetail from "./view/CatalogDetail";
@@ -16,6 +18,7 @@ import Orders from "./view/Orders";
 import LoginChoice from "./view/LoginChoice";
 import Login from "./view/Login";
 import Register from "./view/Register";
+import Profile from "./view/Profile";
 
 import StoryMission from "./view/StoryMission";
 import Contacts from "./view/Contacts";
@@ -30,13 +33,13 @@ import LumiereWidget from "./view/LumiereWidget";
 import Delivery from "./view/CustomerCare/Delivery";
 import Payments from "./view/CustomerCare/Payments";
 import Policy from "./view/CustomerCare/Policy";
-import Profile from "./view/Profile";
+
 import { clearAuthStorage, getAccessToken } from "./utils/token";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { logout, setUser } from "./store/authSlice";
 import { useTheme } from "./theme/ThemeProvider";
-import PrivateRoute from "./components/PrivateRoute";
-import { getProfile } from "./services/auth";
+import { getProfile } from "./api/auth";
+import { useHydrateCart } from "./hooks/useHydrateCart";
 
 import "./App.css";
 
@@ -46,27 +49,39 @@ const App: React.FC = () => {
   const { theme } = useTheme();
 
   const isLoggedIn = useAppSelector((state) => Boolean(state.auth?.isLoggedIn));
-
   const firstName = useAppSelector(
     (state) => (state.auth?.user?.first_name ?? null) as string | null
   );
 
-  // При старте — если токен есть но user не загружен, загружаем профиль
+  useHydrateCart();
+
   useEffect(() => {
     const token = getAccessToken();
-    if (!token) return;
-    if (firstName) return; // профиль уже есть
 
-    getProfile(token)
-      .then((user) => {
+    if (!token) return;
+    if (firstName) return;
+
+    let isMounted = true;
+
+    const loadProfile = async (): Promise<void> => {
+      try {
+        const user = await getProfile(token);
+
+        if (!isMounted) return;
         dispatch(setUser(user));
-      })
-      .catch(() => {
-        // токен протух — разлогиниваем
+      } catch {
+        if (!isMounted) return;
         clearAuthStorage();
         dispatch(logout());
-      });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, firstName]);
 
   const handleLogout = useCallback(() => {
     clearAuthStorage();
@@ -93,9 +108,7 @@ const App: React.FC = () => {
             path="/"
             element={<Home firstName={firstName} isLoggedIn={isLoggedIn} />}
           />
-          <Route element={<PrivateRoute />}>
-            <Route path="/profile" element={<Profile />} />
-          </Route>
+
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/catalog/:slug" element={<CatalogDetail />} />
 
@@ -128,6 +141,10 @@ const App: React.FC = () => {
             path="/recommendation-result"
             element={<RecommendationResult />}
           />
+
+          <Route element={<PrivateRoute />}>
+            <Route path="/profile" element={<Profile />} />
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

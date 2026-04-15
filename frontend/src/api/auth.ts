@@ -1,4 +1,3 @@
-// frontend/src/services/auth.ts
 import api from "../api/axiosInstance";
 
 export type RegisterPayload = {

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { listAboutReviews } from "../services/content";
+import { listAboutReviews } from "../api/content";
 import type { AboutReviewItem } from "../types/content";
 import "../styles/Reviews.css";
 

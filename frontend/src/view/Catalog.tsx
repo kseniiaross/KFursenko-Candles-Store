@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Candle, Category, CandleBadge } from "../types/candle";
-import { listCandles, listCategories } from "../services/candles";
+import { listCandles, listCategories } from "../api/candles";
 import { useAppDispatch } from "../store/hooks";
 import { openSizeModal } from "../store/modalSlice";
 import "../styles/Catalog.css";

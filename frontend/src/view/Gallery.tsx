@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { listAboutGallery } from "../services/content";
+import { listAboutGallery } from "../api/content";
 import type { AboutGalleryItem } from "../types/content";
 import "../styles/Gallery.css";
 

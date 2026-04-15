@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useAppDispatch } from "../store/hooks";
 import { setCredentials } from "../store/authSlice";
 import { notifyAuthChanged } from "../utils/token";
-import { loginWithProfile } from "../services/auth";
+import { loginWithProfile } from "../api/auth";
 
 import "../styles/Login.css";
 

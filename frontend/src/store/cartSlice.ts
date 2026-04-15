@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 export type CartLine = {
+  item_id?: number;
   variant_id: number;
   candle_id: number;
   name?: string;
@@ -58,8 +59,7 @@ const cartSlice = createSlice({
       const idx = findIndex(state.items, action.payload.variant_id);
 
       if (idx !== -1) {
-        const qty = Math.max(1, action.payload.quantity);
-        state.items[idx].quantity = qty;
+        state.items[idx].quantity = Math.max(1, action.payload.quantity);
       }
     },
 
