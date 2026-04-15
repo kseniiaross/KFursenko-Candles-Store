@@ -1,4 +1,3 @@
-# backend/orders/views.py
 from decimal import Decimal
 
 from django.db import transaction

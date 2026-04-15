@@ -1,97 +1,287 @@
+from decimal import Decimal
+
 from rest_framework import serializers
+from orders.models import Order
 
-from candles.models import CandleVariant
-from .models import Cart, CartItem
+from .models import (
+    Category,
+    Collection,
+    Candle,
+    CandleVariant,
+    CandleImage,
+    Offer,
+    AboutGalleryItem,
+    AboutReviewItem,
+)
 
 
-def build_cloudinary_url(file_field):
-    if not file_field:
-        return None
-
-    try:
-        return file_field.build_url(secure=True)
-    except Exception:
-        return str(file_field)
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug"]
 
 
-class CartItemSerializer(serializers.ModelSerializer):
-    variant_id = serializers.PrimaryKeyRelatedField(
-        queryset=CandleVariant.objects.select_related("candle").all(),
-        source="variant",
+class CollectionSerializer(serializers.ModelSerializer):
+    parent = serializers.SerializerMethodField()
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Collection
+        fields = ["id", "name", "slug", "is_group", "parent", "children"]
+
+    def get_parent(self, obj: Collection):
+        if not obj.parent_id:
+            return None
+        return {
+            "id": obj.parent_id,
+            "name": obj.parent.name,
+            "slug": obj.parent.slug,
+        }
+
+    def get_children(self, obj: Collection):
+        qs = obj.children.all().order_by("name")
+        return [{"id": c.id, "name": c.name, "slug": c.slug} for c in qs]
+
+
+class CandleImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CandleImage
+        fields = ["id", "image", "sort_order"]
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        try:
+            return obj.image.build_url(secure=True)
+        except Exception:
+            return str(obj.image)
+
+
+class CandleVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandleVariant
+        fields = ["id", "size", "price", "stock_qty", "is_active"]
+
+
+class CandleBadgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Offer
+        fields = ["slug", "badge_text", "kind", "discount_percent", "priority"]
+
+
+class CandleSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    images = CandleImageSerializer(many=True, read_only=True)
+    variants = CandleVariantSerializer(many=True, read_only=True)
+
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source="category",
         write_only=True,
     )
 
-    item_id = serializers.IntegerField(source="id", read_only=True)
-    candle_id = serializers.IntegerField(source="variant.candle.id", read_only=True)
-    name = serializers.CharField(source="variant.candle.name", read_only=True)
-    slug = serializers.CharField(source="variant.candle.slug", read_only=True)
-    image = serializers.SerializerMethodField(read_only=True)
-    price = serializers.DecimalField(
-        source="variant.price",
-        max_digits=10,
-        decimal_places=2,
-        read_only=True,
+    collections = CollectionSerializer(many=True, read_only=True)
+    collection_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Collection.objects.all(),
+        source="collections",
+        many=True,
+        write_only=True,
+        required=False,
     )
-    size = serializers.CharField(source="variant.size", read_only=True)
-    in_stock = serializers.SerializerMethodField(read_only=True)
+
+    badges = serializers.SerializerMethodField()
+    discount_price = serializers.SerializerMethodField()
 
     class Meta:
-        model = CartItem
-        fields = (
-            "item_id",
-            "variant_id",
-            "candle_id",
+        model = Candle
+        fields = [
+            "id",
             "name",
             "slug",
-            "image",
+            "description",
             "price",
-            "size",
-            "quantity",
+            "discount_price",
+            "stock_qty",
             "in_stock",
-            "is_gift",
-        )
-        read_only_fields = (
-            "item_id",
-            "candle_id",
-            "name",
+            "is_sold_out",
+            "is_bestseller",
+            "created_at",
+            "image",
+            "images",
+            "variants",
+            "category",
+            "category_id",
+            "collections",
+            "collection_ids",
+            "badges",
+        ]
+        read_only_fields = [
             "slug",
-            "image",
-            "price",
-            "size",
             "in_stock",
-        )
+            "created_at",
+            "category",
+            "collections",
+            "images",
+            "variants",
+            "badges",
+            "image",
+            "discount_price",
+        ]
 
     def get_image(self, obj):
-        return build_cloudinary_url(obj.variant.candle.image)
+        if not obj.image:
+            return None
+        try:
+            return obj.image.build_url(secure=True)
+        except Exception:
+            return str(obj.image)
 
-    def get_in_stock(self, obj):
-        return bool(obj.variant.is_active and obj.variant.stock_qty > 0)
+    def get_badges(self, obj: Candle):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
 
-    def validate_quantity(self, value):
-        if value < 1:
-            raise serializers.ValidationError("Quantity must be >= 1.")
+        is_authed = bool(user and user.is_authenticated)
+        is_new_shopper = False
+
+        if is_authed:
+            is_new_shopper = not Order.objects.filter(user=user).exists()
+
+        qs = Offer.objects.filter(is_active=True)
+
+        global_offers = qs.filter(apply_globally=True)
+        direct_m2m = obj.offers.filter(is_active=True)
+        direct_reverse = qs.filter(candles=obj)
+        by_category = qs.filter(categories=obj.category)
+        by_collections = qs.filter(collections__in=obj.collections.all())
+
+        combined = (
+            global_offers
+            | direct_m2m
+            | direct_reverse
+            | by_category
+            | by_collections
+        ).distinct()
+
+        if not is_new_shopper:
+            combined = combined.exclude(new_shopper_only=True)
+
+        combined = combined.order_by("priority", "title")
+
+        return CandleBadgeSerializer(combined, many=True).data
+
+    def get_discount_price(self, obj: Candle):
+        if obj.price is None:
+            return None
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        base_price = Decimal(obj.price)
+
+        qs = Offer.objects.filter(is_active=True)
+
+        global_offers = qs.filter(apply_globally=True)
+        direct_m2m = obj.offers.filter(is_active=True)
+        direct_reverse = qs.filter(candles=obj)
+        by_category = qs.filter(categories=obj.category)
+        by_collections = qs.filter(collections__in=obj.collections.all())
+
+        combined = (
+            global_offers
+            | direct_m2m
+            | direct_reverse
+            | by_category
+            | by_collections
+        ).distinct()
+
+        for offer in combined:
+            if offer.new_shopper_only:
+                if not user or not user.is_authenticated:
+                    continue
+                if Order.objects.filter(user=user).exists():
+                    continue
+
+            if offer.discount_percent:
+                discount = base_price * Decimal(offer.discount_percent) / Decimal(100)
+                return round(base_price - discount, 2)
+
+            if offer.discounted_price:
+                return offer.discounted_price
+
+        return None
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be greater than 0.")
+        return value
+
+    def validate_stock_qty(self, value):
+        if value < 0:
+            raise serializers.ValidationError("stock_qty cannot be negative.")
         return value
 
 
-class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(many=True, read_only=True)
+class AboutGalleryItemSerializer(serializers.ModelSerializer):
+    media = serializers.SerializerMethodField()
+    preview_image = serializers.SerializerMethodField()
 
     class Meta:
-        model = Cart
-        fields = ("id", "items", "created_at", "updated_at")
-        read_only_fields = ("id", "items", "created_at", "updated_at")
+        model = AboutGalleryItem
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "media_type",
+            "media",
+            "preview_image",
+            "caption",
+            "sort_order",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = ["slug", "created_at"]
+
+    def get_media(self, obj):
+        if not obj.media:
+            return None
+        try:
+            return obj.media.build_url(secure=True)
+        except Exception:
+            return str(obj.media)
+
+    def get_preview_image(self, obj):
+        if not obj.preview_image:
+            return None
+        try:
+            return obj.preview_image.build_url(secure=True)
+        except Exception:
+            return str(obj.preview_image)
 
 
-class MergeCartItemInputSerializer(serializers.Serializer):
-    variant_id = serializers.IntegerField()
-    quantity = serializers.IntegerField(min_value=1, max_value=999)
-    is_gift = serializers.BooleanField(required=False, default=False)
+class AboutReviewItemSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
 
+    class Meta:
+        model = AboutReviewItem
+        fields = [
+            "id",
+            "title",
+            "customer_name",
+            "image",
+            "caption",
+            "sort_order",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = ["created_at"]
 
-class MergeCartSerializer(serializers.Serializer):
-    items = MergeCartItemInputSerializer(many=True)
-
-    def validate_items(self, items):
-        if not items:
-            raise serializers.ValidationError("items must not be empty.")
-        return items
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        try:
+            return obj.image.build_url(secure=True)
+        except Exception:
+            return str(obj.image)

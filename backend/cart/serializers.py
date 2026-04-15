@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from candles.models import Candle
+from candles.models import CandleVariant
 from .models import Cart, CartItem
 
 
@@ -15,28 +15,57 @@ def build_cloudinary_url(file_field):
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    candle_id = serializers.PrimaryKeyRelatedField(
-        queryset=Candle.objects.all(),
-        source="candle",
+    variant_id = serializers.PrimaryKeyRelatedField(
+        queryset=CandleVariant.objects.select_related("candle").all(),
+        source="variant",
         write_only=True,
     )
 
-    candle = serializers.SerializerMethodField(read_only=True)
+    item_id = serializers.IntegerField(source="id", read_only=True)
+    candle_id = serializers.IntegerField(source="variant.candle.id", read_only=True)
+    name = serializers.CharField(source="variant.candle.name", read_only=True)
+    slug = serializers.CharField(source="variant.candle.slug", read_only=True)
+    image = serializers.SerializerMethodField(read_only=True)
+    price = serializers.DecimalField(
+        source="variant.price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+    size = serializers.CharField(source="variant.size", read_only=True)
+    in_stock = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = CartItem
-        fields = ("id", "candle", "candle_id", "quantity")
-        read_only_fields = ("id", "candle")
+        fields = (
+            "item_id",
+            "variant_id",
+            "candle_id",
+            "name",
+            "slug",
+            "image",
+            "price",
+            "size",
+            "quantity",
+            "in_stock",
+            "is_gift",
+        )
+        read_only_fields = (
+            "item_id",
+            "candle_id",
+            "name",
+            "slug",
+            "image",
+            "price",
+            "size",
+            "in_stock",
+        )
 
-    def get_candle(self, obj):
-        return {
-            "id": obj.candle_id,
-            "name": obj.candle.name,
-            "price": str(obj.candle.price),
-            "slug": obj.candle.slug,
-            "image": build_cloudinary_url(obj.candle.image),
-            "in_stock": obj.candle.in_stock,
-        }
+    def get_image(self, obj):
+        return build_cloudinary_url(obj.variant.candle.image)
+
+    def get_in_stock(self, obj):
+        return bool(obj.variant.is_active and obj.variant.stock_qty > 0)
 
     def validate_quantity(self, value):
         if value < 1:
@@ -54,8 +83,9 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class MergeCartItemInputSerializer(serializers.Serializer):
-    candle_id = serializers.IntegerField()
+    variant_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1, max_value=999)
+    is_gift = serializers.BooleanField(required=False, default=False)
 
 
 class MergeCartSerializer(serializers.Serializer):

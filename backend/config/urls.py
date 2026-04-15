@@ -1,4 +1,3 @@
-# backend/config/urls.py
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,

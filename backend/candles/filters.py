@@ -1,12 +1,9 @@
-# backend/candles/filters.py
 import django_filters
 from django.db.models import Q
 from .models import Candle, Collection
 
 
 class CandleFilter(django_filters.FilterSet):
-    # ✅ умный фильтр: если slug родителя (is_group=True),
-    # то вернем свечи и из всех его children тоже
     collection = django_filters.CharFilter(method="filter_collection")
 
     collections = django_filters.ModelMultipleChoiceFilter(
@@ -30,7 +27,6 @@ class CandleFilter(django_filters.FilterSet):
 
         col = Collection.objects.filter(slug__iexact=slug).first()
         if not col:
-            # fallback — как было раньше
             return queryset.filter(collections__slug__iexact=slug)
 
         if col.is_group:

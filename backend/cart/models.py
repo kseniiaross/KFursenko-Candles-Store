@@ -1,9 +1,6 @@
 from django.conf import settings
 from django.db import models
 
-from candles.models import Candle
-
-
 
 class Cart(models.Model):
     user = models.OneToOneField(
@@ -19,12 +16,21 @@ class Cart(models.Model):
 
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    candle = models.ForeignKey(Candle, on_delete=models.PROTECT, related_name="cart_items")
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    variant = models.ForeignKey(
+        "candles.CandleVariant",
+        on_delete=models.PROTECT,
+        related_name="cart_items",
+    )
     quantity = models.PositiveIntegerField(default=1)
+    is_gift = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ("cart", "candle")
+        unique_together = ("cart", "variant")
 
     def __str__(self) -> str:
-        return f"{self.candle.name} x{self.quantity}"
+        return f"{self.variant.candle.name} / {self.variant.size} x{self.quantity}"

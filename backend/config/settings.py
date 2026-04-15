@@ -109,7 +109,7 @@ INSTALLED_APPS = [
     "cart",
     "orders",
     "newsletter",
-    "lumiere",  # ✅ app для AI ассистента
+    "lumiere", 
 ]
 
 
