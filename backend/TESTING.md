@@ -48,3 +48,20 @@ AI was used as a testing assistant to:
 - stock awareness
 - conversational memory
 - alignment with store policies
+
+
+## Production Debugging & Fixes
+
+### Cart Persistence Issue (Railway)
+
+A production issue was identified where cart items were lost after page refresh.
+
+**Root cause:**  
+The deployed Railway database schema was out of sync with the application code.  
+The backend had been updated to use a variant-based cart model, while the production database still reflected the legacy candle-based structure.
+
+**Resolution:**  
+The cart tables were reset and migrations were reapplied in the Railway environment to align the database schema with the current application model.
+
+**Result:**  
+Cart persistence was fully restored across refreshes and authenticated sessions.
