@@ -97,9 +97,11 @@ const CatalogDetail: React.FC = () => {
       <div className="catalogDetail__inner">
         <div className="catalogDetail__layout">
           <div className="catalogDetail__mediaColumn">
-            <Link to="/catalog" className="catalogDetail__back">
-              ← Back to catalog
-            </Link>
+            <div className="catalogDetail__mediaTopRow">
+              <Link to="/catalog" className="catalogDetail__back">
+                ← Back to catalog
+              </Link>
+            </div>
 
             <div className="catalogDetail__media">
               <div className="catalogDetail__mainImgWrap">

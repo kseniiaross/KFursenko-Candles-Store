@@ -7,6 +7,8 @@ import { useAppDispatch } from "../store/hooks";
 import { openSizeModal } from "../store/modalSlice";
 import "../styles/Catalog.css";
 
+const ITEMS_PER_PAGE = 8;
+
 function normalizeBadges(badges?: CandleBadge[]): CandleBadge[] {
   if (!Array.isArray(badges)) return [];
   return [...badges].sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
@@ -24,6 +26,12 @@ const Catalog: React.FC = () => {
 
   const q = searchParams.get("q") ?? "";
   const categoryParam = searchParams.get("category") ?? "";
+  const pageParam = searchParams.get("page") ?? "1";
+
+  const page = useMemo(() => {
+    const value = Number(pageParam);
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  }, [pageParam]);
 
   const categoryId = useMemo(() => {
     const numericValue = Number(categoryParam);
@@ -67,36 +75,65 @@ const Catalog: React.FC = () => {
     };
   }, [q, categoryId, t]);
 
-  const onSearchChange = (value: string): void => {
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(candles.length / ITEMS_PER_PAGE));
+  }, [candles.length]);
+
+  const safePage = Math.min(page, totalPages);
+
+  const visibleCandles = useMemo(() => {
+    const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
+    return candles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [candles, safePage]);
+
+  const updateParams = (updater: (next: URLSearchParams) => void): void => {
     const next = new URLSearchParams(searchParams);
-    const normalizedValue = value.trimStart();
-
-    if (normalizedValue.trim()) {
-      next.set("q", normalizedValue);
-    } else {
-      next.delete("q");
-    }
-
+    updater(next);
     setSearchParams(next);
+  };
+
+  const onSearchChange = (value: string): void => {
+    updateParams((next) => {
+      const normalizedValue = value.trimStart();
+
+      if (normalizedValue.trim()) {
+        next.set("q", normalizedValue);
+      } else {
+        next.delete("q");
+      }
+
+      next.delete("page");
+    });
   };
 
   const onCategoryChange = (value: string): void => {
-    const next = new URLSearchParams(searchParams);
+    updateParams((next) => {
+      if (value) {
+        next.set("category", value);
+      } else {
+        next.delete("category");
+      }
 
-    if (value) {
-      next.set("category", value);
-    } else {
-      next.delete("category");
-    }
-
-    setSearchParams(next);
+      next.delete("page");
+    });
   };
 
   const clearFilters = (): void => {
-    const next = new URLSearchParams(searchParams);
-    next.delete("q");
-    next.delete("category");
-    setSearchParams(next);
+    updateParams((next) => {
+      next.delete("q");
+      next.delete("category");
+      next.delete("page");
+    });
+  };
+
+  const setPage = (nextPage: number): void => {
+    updateParams((next) => {
+      if (nextPage <= 1) {
+        next.delete("page");
+      } else {
+        next.set("page", String(nextPage));
+      }
+    });
   };
 
   const hasActiveFilters = Boolean(q || categoryParam);
@@ -185,12 +222,11 @@ const Catalog: React.FC = () => {
 
         {!loading && !error ? (
           <>
-
             <section
               className="catalog__grid"
               aria-label={t("catalog.productListLabel")}
             >
-              {candles.map((product) => {
+              {visibleCandles.map((product) => {
                 const coverUrl = product.image ?? "";
                 if (!coverUrl) return null;
 
@@ -286,6 +322,32 @@ const Catalog: React.FC = () => {
                 );
               })}
             </section>
+
+            {totalPages > 1 ? (
+              <nav className="catalog__pagination" aria-label="Catalog pagination">
+                <button
+                  type="button"
+                  className="catalog__pageBtn"
+                  onClick={() => setPage(safePage - 1)}
+                  disabled={safePage === 1}
+                >
+                  Prev
+                </button>
+
+                <div className="catalog__pageInfo">
+                  {safePage} / {totalPages}
+                </div>
+
+                <button
+                  type="button"
+                  className="catalog__pageBtn"
+                  onClick={() => setPage(safePage + 1)}
+                  disabled={safePage === totalPages}
+                >
+                  Next
+                </button>
+              </nav>
+            ) : null}
           </>
         ) : null}
       </div>

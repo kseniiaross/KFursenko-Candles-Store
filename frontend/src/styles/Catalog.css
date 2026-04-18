@@ -1,8 +1,8 @@
 :root {
   --catalog-max-width: 1360px;
   --catalog-side-padding: 24px;
-  --catalog-grid-gap-x: 28px;
-  --catalog-grid-gap-y: 56px;
+  --catalog-grid-gap-x: 20px;
+  --catalog-grid-gap-y: 40px;
   --catalog-clear-width: 104px;
 }
 
@@ -213,7 +213,7 @@
 }
 
 /* ======================================================
-   STATUS / META
+   STATUS
    ====================================================== */
 
 .catalog__status {
@@ -237,7 +237,7 @@
 
 .catalog__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
   align-items: start;
   margin-top: 28px;
@@ -250,7 +250,7 @@
 .catalogCard {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .catalogCard__link {
@@ -262,7 +262,7 @@
 .catalogCard__media {
   position: relative;
   width: 100%;
-  height: 420px;
+  height: 300px;
   overflow: hidden;
   background: #f5f3ef;
 }
@@ -278,11 +278,11 @@
 
 .catalogCard__badges {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 12px;
+  left: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .badge {
@@ -290,11 +290,11 @@
   align-items: center;
   width: fit-content;
   max-width: 100%;
-  padding: 6px 10px;
+  padding: 5px 9px;
   border-radius: 999px;
   background: rgba(17, 17, 17, 0.94);
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.2;
@@ -312,14 +312,14 @@
 .catalogCard__body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .catalogCard__metaRow {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   color: inherit;
   text-decoration: none;
 }
@@ -328,7 +328,7 @@
   margin: 0;
   min-width: 0;
   font-family: "Times New Roman", Times, serif;
-  font-size: 1.22rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.14;
   letter-spacing: 0.03em;
@@ -338,7 +338,7 @@
 .catalogCard__price {
   flex-shrink: 0;
   padding-top: 1px;
-  font-size: 1.02rem;
+  font-size: 0.96rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -350,14 +350,14 @@
 
 .catalogCard__btn {
   width: 100%;
-  min-height: 48px;
+  min-height: 42px;
   border: 1px solid var(--app-border);
   background: var(--app-surface);
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
   transition:
@@ -385,13 +385,63 @@
 }
 
 /* ======================================================
+   PAGINATION
+   ====================================================== */
+
+.catalog__pagination {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.catalog__pageBtn {
+  min-width: 92px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--app-text);
+  font-family: "Times New Roman", Times, serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    opacity 180ms ease;
+}
+
+.catalog__pageBtn:hover:not(:disabled) {
+  background: var(--app-surface-strong);
+  transform: translateY(-1px);
+}
+
+.catalog__pageBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
+.catalog__pageInfo {
+  min-width: 64px;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* ======================================================
    TABLET
    ====================================================== */
 
 @media (max-width: 1180px) {
   .catalog__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 22px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px 18px;
   }
 
   .catalog__filters {
@@ -408,7 +458,7 @@
   }
 
   .catalogCard__media {
-    height: 400px;
+    height: 280px;
   }
 }
 
@@ -417,12 +467,12 @@
     padding-top: calc(var(--header-offset) - 110px);
   }
 
-  .catalogCard__name {
-    font-size: 1.14rem;
+  .catalog__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .catalogCard__media {
-    height: 380px;
+    height: 320px;
   }
 }
 
@@ -505,5 +555,14 @@
     width: 100%;
     min-height: 46px;
     justify-content: center;
+  }
+
+  .catalog__pagination {
+    margin-top: 28px;
+    gap: 12px;
+  }
+
+  .catalog__pageBtn {
+    min-width: 78px;
   }
 }
