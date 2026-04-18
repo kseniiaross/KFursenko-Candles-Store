@@ -1,14 +1,7 @@
-:root {
-  --header-offset: 140px;
-}
-
 .cc-page {
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: var(--header-offset);
-  padding-right: 24px;
-  padding-bottom: 80px;
-  padding-left: 24px;
+  padding: 0 24px 80px;
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
 }
@@ -231,10 +224,7 @@
 
 @media (max-width: 560px) {
   .cc-page {
-    padding-top: calc(var(--header-height) - 8px);
-    padding-right: 16px;
-    padding-bottom: 70px;
-    padding-left: 16px;
+    padding: 0 16px 70px;
   }
 
   .cc-section {

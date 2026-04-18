@@ -1,5 +1,5 @@
 :root {
-  --header-offset: 138px;
+  --header-height: 170px;
   --page-max-width: 1440px;
 
   --app-text: rgba(17, 17, 17, 0.92);
@@ -23,9 +23,9 @@
   --app-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
 }
 
-/* Allow html/body to scroll freely — never clip content */
 html {
   width: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -33,15 +33,19 @@ html {
 
 body {
   width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  /* Never clip vertically */
   overflow-y: auto;
+  background: var(--color-bg, #f6f1ea);
+  color: var(--app-text);
 }
 
 #root {
   width: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
 }
@@ -50,32 +54,28 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  /* Min height so short pages still fill screen */
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
   isolation: isolate;
   color: var(--app-text);
-  /* Never clip content vertically */
   overflow: visible;
 }
 
 .appShell__body {
   position: relative;
   z-index: 1;
-  padding-top: var(--header-height);
   flex: 1 0 auto;
   width: 100%;
   min-width: 0;
-  /* Content must never be hidden */
+  padding-top: var(--header-height);
   overflow: visible;
 }
 
-.appShell--home {
+.appShell--home .appShell__body {
   padding-top: 0;
 }
 
-/* Fixed background — purely decorative, never affects layout */
 .appShell--inner::before {
   content: "";
   position: fixed;
@@ -127,16 +127,10 @@ body {
   display: none;
 }
 
-/* =====================================================
-   RESPONSIVE
-   header-offset must match actual header height:
-   desktop 140px → 138px
-   tablet ≤900px → 102px
-   mobile ≤600px → 112px
-   ===================================================== */
-
 @media (max-width: 900px) {
-  :root { --header-offset: 102px; }
+  :root {
+    --header-height: 102px;
+  }
 
   .appShell--inner::before {
     transform: scale(1.06);
@@ -144,5 +138,7 @@ body {
 }
 
 @media (max-width: 600px) {
-  :root { --header-offset: 112px; }
+  :root {
+    --header-height: 112px;
+  }
 }

@@ -1,33 +1,23 @@
-:root {
+.support {
   --support-max-width: 1000px;
-
   --support-text: rgba(17, 17, 17, 0.94);
   --support-muted: rgba(17, 17, 17, 0.72);
   --support-soft: rgba(17, 17, 17, 0.58);
-
   --support-surface: rgba(255, 255, 255, 0.55);
   --support-shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
-  --header-offset: 140px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0 24px 80px;
+  font-family: inherit;
+  color: var(--support-text);
 }
 
-[data-theme="dark"] {
+[data-theme="dark"] .support {
   --support-text: rgba(245, 239, 232, 0.95);
   --support-muted: rgba(245, 239, 232, 0.78);
   --support-soft: rgba(245, 239, 232, 0.62);
-
   --support-surface: rgba(24, 20, 18, 0.55);
   --support-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
-}
-
-.support {
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding-top: var(--header-offset);
-  padding-right: 24px;
-  padding-bottom: 80px;
-  padding-left: 24px;
-  font-family: inherit;
-  color: var(--support-text);
 }
 
 .support__container {
@@ -145,10 +135,7 @@
 
 @media (max-width: 640px) {
   .support {
-    padding-top: calc(var(--header-height) - 8px);
-    padding-right: 16px;
-    padding-bottom: 60px;
-    padding-left: 16px;
+    padding: 0 16px 60px;
   }
 
   .support__title {

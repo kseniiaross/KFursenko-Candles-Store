@@ -1,15 +1,7 @@
-:root {
-  --header-offset: 140px;
-}
 .cc-page {
   min-height: 100vh;
   min-height: 100dvh;
-
-  padding-top: var(--header-offset);
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-bottom: 80px;
-
+  padding: 0 24px 80px;
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
 }
@@ -175,14 +167,9 @@
 }
 
 @media (max-width: 560px) {
-  @media (max-width: 560px) {
   .cc-page {
-    padding-top: calc(var(--header-height) - 6px);
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: 70px;
+    padding: 0 16px 70px;
   }
-}
 
   .cc-hero__title {
     font-size: 2rem;
