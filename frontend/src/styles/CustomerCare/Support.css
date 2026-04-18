@@ -21,7 +21,7 @@
 .support {
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: calc(var(--header-height) - 24px);
+  padding-top: calc(var(--header-height) + 24px);
   padding-right: 24px;
   padding-bottom: 80px;
   padding-left: 24px;
