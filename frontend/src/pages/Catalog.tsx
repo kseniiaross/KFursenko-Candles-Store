@@ -124,14 +124,14 @@ const Catalog: React.FC = () => {
             aria-label={t("catalog.filtersLabel")}
             onSubmit={(event) => event.preventDefault()}
           >
-            <div className="catalog__field catalog__field--wide">
+            <div className="catalog__filterItem catalog__filterItem--search">
               <label className="catalog__label" htmlFor="catalog-search">
                 {t("catalog.searchLabel")}
               </label>
 
               <input
                 id="catalog-search"
-                className="catalog__input"
+                className="catalog__searchLine"
                 type="search"
                 value={q}
                 onChange={(event) => onSearchChange(event.target.value)}
@@ -139,30 +139,32 @@ const Catalog: React.FC = () => {
               />
             </div>
 
-            <div className="catalog__field">
+            <div className="catalog__filterItem catalog__filterItem--category">
               <label className="catalog__label" htmlFor="catalog-category">
                 {t("catalog.categoryLabel")}
               </label>
 
-              <select
-                id="catalog-category"
-                className="catalog__select"
-                value={categoryParam}
-                onChange={(event) => onCategoryChange(event.target.value)}
-              >
-                <option value="">{t("catalog.allCategories")}</option>
+              <div className="catalog__categoryWrap">
+                <select
+                  id="catalog-category"
+                  className="catalog__categoryInline"
+                  value={categoryParam}
+                  onChange={(event) => onCategoryChange(event.target.value)}
+                >
+                  <option value="">{t("catalog.allCategories")}</option>
 
-                {categories.map((category) => (
-                  <option key={category.id} value={String(category.id)}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+                  {categories.map((category) => (
+                    <option key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <button
               type="button"
-              className="catalog__clearBtn"
+              className="catalog__clearInline"
               onClick={clearFilters}
               disabled={!hasActiveFilters}
             >
