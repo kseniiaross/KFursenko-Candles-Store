@@ -1,7 +1,12 @@
 .cc-page {
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 110px 24px 80px;
+
+  padding-top: calc(var(--header-height) - 20px);
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-bottom: 80px;
+
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
 }

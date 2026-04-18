@@ -5,6 +5,7 @@ import Header from "./pages/Header";
 import Footer from "./pages/Footer";
 import SizeModal from "./components/SizeModal";
 import PrivateRoute from "./components/PrivateRoute";
+import ScrollToTop from "./components/ScrollToTop";
 
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
@@ -33,6 +34,7 @@ import LumiereWidget from "./pages/LumiereWidget";
 import Delivery from "./pages/CustomerCare/Delivery";
 import Payments from "./pages/CustomerCare/Payments";
 import Policy from "./pages/CustomerCare/Policy";
+import Support from "./pages/Support";
 
 import { clearAuthStorage, getAccessToken } from "./utils/token";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
@@ -103,6 +105,8 @@ const App: React.FC = () => {
       />
 
       <div className="appShell__body">
+        <ScrollToTop />
+
         <Routes>
           <Route
             path="/"
@@ -127,6 +131,7 @@ const App: React.FC = () => {
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/policy" element={<Policy />} />
+          <Route path="/support" element={<Support />} />
 
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/story-mission" element={<StoryMission />} />

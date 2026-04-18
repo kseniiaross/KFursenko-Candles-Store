@@ -13,7 +13,7 @@ const Delivery: React.FC = () => {
           <p className="cc-hero__kicker">Customer care</p>
           <h1 className="cc-hero__title">Delivery</h1>
           <p className="cc-hero__subtitle">
-            Handmade candles are made with care — we keep shipping clear and simple.
+            Handmade candles are made with care, we keep shipping clear and simple.
           </p>
 
           <div className="cc-cards" role="list">

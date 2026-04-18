@@ -1,7 +1,10 @@
 .cc-page {
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 110px 24px 80px;
+  padding-top: calc(var(--header-height) - 16px);
+  padding-right: 24px;
+  padding-bottom: 80px;
+  padding-left: 24px;
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
 }
@@ -224,7 +227,10 @@
 
 @media (max-width: 560px) {
   .cc-page {
-    padding: 96px 16px 70px;
+    padding-top: calc(var(--header-height) - 8px);
+    padding-right: 16px;
+    padding-bottom: 70px;
+    padding-left: 16px;
   }
 
   .cc-section {
