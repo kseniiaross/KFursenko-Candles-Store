@@ -7,6 +7,7 @@
 
   --support-surface: rgba(255, 255, 255, 0.55);
   --support-shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
+  --header-offset: 140px;
 }
 
 [data-theme="dark"] {
@@ -21,7 +22,7 @@
 .support {
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: calc(var(--header-height) + 24px);
+  padding-top: var(--header-offset);
   padding-right: 24px;
   padding-bottom: 80px;
   padding-left: 24px;

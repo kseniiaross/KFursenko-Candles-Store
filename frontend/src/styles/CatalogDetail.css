@@ -1,7 +1,11 @@
+:root {
+  --header-offset: 140px;
+}
+
 .catalogDetail {
   width: 100%;
   min-height: 100vh;
-  padding-top: calc(var(--header-height) - 80px);
+  padding-top: var(--header-offset);
   padding-bottom: 72px;
   padding-left: clamp(16px, 3vw, 40px);
   padding-right: clamp(16px, 3vw, 40px);

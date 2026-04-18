@@ -4,6 +4,7 @@
   --catalog-grid-gap-x: 20px;
   --catalog-grid-gap-y: 40px;
   --catalog-clear-width: 104px;
+  --header-offset: 140px;
 }
 
 /* ======================================================
@@ -14,7 +15,7 @@
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: calc(var(--header-offset) - 170px);
+  padding-top: var(--header-offset);
   padding-right: var(--catalog-side-padding);
   padding-bottom: 110px;
   padding-left: var(--catalog-side-padding);
