@@ -193,7 +193,22 @@ class Candle(models.Model):
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
+
+    short_description = models.TextField(blank=True, default="")
     description = models.TextField(blank=True)
+
+    fragrance_family = models.CharField(max_length=150, blank=True, default="")
+    intensity = models.CharField(max_length=50, blank=True, default="")
+
+    top_notes = models.JSONField(default=list, blank=True)
+    heart_notes = models.JSONField(default=list, blank=True)
+    base_notes = models.JSONField(default=list, blank=True)
+
+    mood_tags = models.JSONField(default=list, blank=True)
+    use_case_tags = models.JSONField(default=list, blank=True)
+    ideal_spaces = models.JSONField(default=list, blank=True)
+    season_tags = models.JSONField(default=list, blank=True)
+
     image = CloudinaryField("image", blank=True, null=True)
 
     price = models.DecimalField(

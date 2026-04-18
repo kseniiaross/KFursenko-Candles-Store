@@ -28,27 +28,16 @@
   display: block;
   object-fit: cover;
   object-position: center center;
-
-  /* FIX: убираем scale и will-change — они понижают качество рендеринга */
-  /* FIX: transform: none вместо scale(1.01) — scale создаёт отдельный compositing layer */
   transform: translateZ(0);
-
-  /* FIX: убираем backface-visibility — не нужен для видео, только ухудшает */
-
   opacity: 0;
   transition: opacity 700ms ease-in-out;
-
-  /* FIX: will-change только на opacity, не на transform */
   will-change: opacity;
-
-  /* FIX: принудительно высокое качество пикселей */
   image-rendering: high-quality;
   -webkit-transform: translateZ(0);
 }
 
 .home__video.is-visible {
   opacity: 1;
-  /* FIX: убираем will-change после того как видео показалось — освобождаем GPU */
   will-change: auto;
 }
 

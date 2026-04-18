@@ -65,6 +65,12 @@ def _is_candle_available(candle: Candle) -> bool:
     return bool(candle.in_stock)
 
 
+def _join_list(values: List[str] | None) -> str:
+    if not values:
+        return ""
+    return ", ".join(v.strip() for v in values if isinstance(v, str) and v.strip())
+
+
 def _serialize_candle(candle: Candle) -> Dict[str, Any]:
     return {
         "id": candle.id,
@@ -72,6 +78,17 @@ def _serialize_candle(candle: Candle) -> Dict[str, Any]:
         "slug": candle.slug,
         "price": _get_display_price(candle),
         "in_stock": _is_candle_available(candle),
+        "short_description": candle.short_description or "",
+        "description": candle.description or "",
+        "fragrance_family": candle.fragrance_family or "",
+        "intensity": candle.intensity or "",
+        "top_notes": candle.top_notes or [],
+        "heart_notes": candle.heart_notes or [],
+        "base_notes": candle.base_notes or [],
+        "mood_tags": candle.mood_tags or [],
+        "use_case_tags": candle.use_case_tags or [],
+        "ideal_spaces": candle.ideal_spaces or [],
+        "season_tags": candle.season_tags or [],
     }
 
 
@@ -105,7 +122,13 @@ def search_candles(query: str, limit: int = 6) -> List[Dict[str, Any]]:
         return []
 
     qs = (
-        Candle.objects.filter(Q(name__icontains=q) | Q(description__icontains=q))
+        Candle.objects.filter(
+            Q(name__icontains=q)
+            | Q(short_description__icontains=q)
+            | Q(description__icontains=q)
+            | Q(fragrance_family__icontains=q)
+            | Q(intensity__icontains=q)
+        )
         .select_related("category")
         .prefetch_related(
             Prefetch(
@@ -125,6 +148,7 @@ def build_store_context(suggestions: List[Dict[str, Any]]) -> str:
         return "CATALOG SEARCH: No matching products found for this query."
 
     lines = ["CATALOG SEARCH RESULTS (use these and only these to recommend):"]
+
     for suggestion in suggestions:
         stock = "✓ In stock" if suggestion["in_stock"] else "✗ Out of stock"
         price_text = (
@@ -132,9 +156,48 @@ def build_store_context(suggestions: List[Dict[str, Any]]) -> str:
             if suggestion["price"]
             else "Price unavailable"
         )
+
         lines.append(
-            f"  • {suggestion['name']} — {price_text} — {stock} — slug: {suggestion['slug']}"
+            f"• {suggestion['name']} — {price_text} — {stock} — slug: {suggestion['slug']}"
         )
+
+        if suggestion.get("short_description"):
+            lines.append(f"  Short description: {suggestion['short_description']}")
+
+        if suggestion.get("fragrance_family"):
+            lines.append(f"  Fragrance family: {suggestion['fragrance_family']}")
+
+        top_notes = _join_list(suggestion.get("top_notes"))
+        if top_notes:
+            lines.append(f"  Top notes: {top_notes}")
+
+        heart_notes = _join_list(suggestion.get("heart_notes"))
+        if heart_notes:
+            lines.append(f"  Heart notes: {heart_notes}")
+
+        base_notes = _join_list(suggestion.get("base_notes"))
+        if base_notes:
+            lines.append(f"  Base notes: {base_notes}")
+
+        mood_tags = _join_list(suggestion.get("mood_tags"))
+        if mood_tags:
+            lines.append(f"  Mood: {mood_tags}")
+
+        use_case_tags = _join_list(suggestion.get("use_case_tags"))
+        if use_case_tags:
+            lines.append(f"  Best for: {use_case_tags}")
+
+        ideal_spaces = _join_list(suggestion.get("ideal_spaces"))
+        if ideal_spaces:
+            lines.append(f"  Ideal spaces: {ideal_spaces}")
+
+        season_tags = _join_list(suggestion.get("season_tags"))
+        if season_tags:
+            lines.append(f"  Seasons: {season_tags}")
+
+        if suggestion.get("intensity"):
+            lines.append(f"  Intensity: {suggestion['intensity']}")
+
     return "\n".join(lines)
 
 
@@ -165,6 +228,13 @@ You know deeply about:
 - Candle care (first burn, trimming wicks, avoiding tunneling)
 - Seasonal and home styling with candles
 
+═══ HOW TO RECOMMEND ═══
+- Use the provided product data, including notes, mood, best-for tags, ideal spaces, and fragrance family.
+- Prefer recommendations that match the customer's requested mood, scent type, or room.
+- If the customer asks for something like "calming", "fresh", "spa-like", "not sweet", or "for a bathroom", use the structured product fields to match the best item.
+- If multiple candles fit, recommend the 1-2 strongest matches.
+- If nothing fits well, say so honestly and ask one clarifying question.
+
 ═══ YOUR SALES APPROACH ═══
 1. DIAGNOSE before recommending. Ask 1 targeted question to understand:
    - The occasion (gift vs. self-use? celebration, relaxation, daily ambiance?)
@@ -172,8 +242,7 @@ You know deeply about:
    - Context (living room, bedroom, bathroom, office? day or evening use?)
 
 2. PAINT A PICTURE when recommending. Don't just say "this candle is nice."
-   Say: "This one opens with bergamot, then settles into warm sandalwood —
-   perfect for winding down after a long day."
+   Say: "This one opens with bergamot, then settles into warm sandalwood — perfect for winding down after a long day."
 
 3. GUIDE NATURALLY toward purchase:
    - Mention stock scarcity when relevant ("This one sells out fast")
@@ -190,7 +259,7 @@ You know deeply about:
 
 ═══ HARD RULES ═══
 - ONLY recommend products from the CATALOG SEARCH RESULTS below
-- Never invent products, prices, stock status, or store policies
+- Never invent products, prices, stock status, notes, or store policies
 - Keep replies focused: 2-5 sentences unless describing a scent profile
 - Ask maximum ONE clarifying question per reply
 - If catalog has no match, say so honestly and ask a question to find a better match
