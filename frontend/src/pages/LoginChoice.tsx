@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import loginLightBg from "../assets/images/lightmode.jpeg";
-import loginDarkBg from "../assets/images/darkmode.jpeg";
+import loginLightBg from "../assets/images/lightmode.jpg";
+import loginDarkBg from "../assets/images/darkmode.jpg";
 
 import "../styles/LoginChoice.css";
 

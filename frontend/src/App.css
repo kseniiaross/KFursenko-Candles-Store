@@ -114,7 +114,7 @@ body {
 }
 
 [data-theme="dark"] .appShell--inner::before {
-  background-image: url("./assets/images/darkmode.jpeg");
+  background-image: url("./assets/images/darkmode.jpg");
   filter: blur(10px) brightness(0.72) saturate(0.92);
 }
 
