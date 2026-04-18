@@ -30,7 +30,7 @@
 .catalogDetail__mediaTopRow {
   position: absolute;
   top: -6px;
-  left: calc(-1 * clamp(16px, 3vw, 40px));
+  left: -136px;
   z-index: 30;
   display: flex;
   align-items: center;
@@ -120,8 +120,6 @@
   font-weight: 700;
 }
 
-/* ========== SCENT SELECTOR ========== */
-
 .catalogDetail__scentBlock {
   display: flex;
   flex-direction: column;
@@ -171,8 +169,6 @@
   border-color: rgba(245, 239, 232, 0.95);
 }
 
-/* ========== SIZE SELECTOR ========== */
-
 .catalogDetail__sizeBlock {
   display: flex;
   flex-direction: column;
@@ -220,16 +216,12 @@
   border-color: rgba(245, 239, 232, 0.95);
 }
 
-/* ========== DESCRIPTION ========== */
-
 .catalogDetail__desc {
   margin: 0;
   line-height: 1.8;
   opacity: 0.8;
   white-space: pre-wrap;
 }
-
-/* ========== BUTTON ========== */
 
 .catalogDetail__btn {
   margin-top: 8px;
