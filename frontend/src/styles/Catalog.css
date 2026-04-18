@@ -240,6 +240,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
   align-items: start;
+  margin-top: 28px;
 }
 
 /* ======================================================
