@@ -101,7 +101,7 @@ body {
 }
 
 [data-theme="light"] .appShell--inner::before {
-  background-image: url("./assets/images/lightmode.jpeg");
+  background-image: url("./assets/images/lightmode.jpg");
   filter: blur(10px) brightness(1.04) saturate(0.96);
 }
 
