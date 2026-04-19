@@ -1,14 +1,13 @@
-:root {
-  --header-offset: 138px;
-  --payment-cancel-max-width: 760px;
-}
+/* =====================================================
+   PAGE
+   ===================================================== */
 
-/* This page intentionally uses no local background.
-   It inherits the global themed background from the app shell. */
 .paymentCancel {
+  --payment-cancel-max-width: 760px;
+
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(var(--header-offset) + 28px) 24px 88px;
+  padding: 28px 24px 88px;
   font-family: inherit;
   color: rgba(17, 17, 17, 0.94);
 }
@@ -21,6 +20,10 @@
   width: min(100%, var(--payment-cancel-max-width));
   margin: 0 auto;
 }
+
+/* =====================================================
+   CARD
+   ===================================================== */
 
 .paymentCancel__card {
   padding: 40px 32px;
@@ -72,6 +75,10 @@
 [data-theme="dark"] .paymentCancel__description {
   color: rgba(245, 239, 232, 0.76);
 }
+
+/* =====================================================
+   ACTIONS
+   ===================================================== */
 
 .paymentCancel__actions {
   display: flex;
@@ -148,9 +155,13 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-@media (max-width: 640px) {
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 600px) {
   .paymentCancel {
-    padding: calc(var(--header-offset) + 16px) 16px 72px;
+    padding: 16px 16px 72px;
   }
 
   .paymentCancel__card {

@@ -2,7 +2,7 @@
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(var(--header-offset) + 12px) 20px 100px;
+  padding: 0 20px 100px;
   font-family: "Times New Roman", Times, serif;
   color: var(--app-text);
 }
@@ -324,10 +324,6 @@
 }
 
 @media (max-width: 900px) {
-  .cart {
-    padding-top: calc(var(--header-offset) + 10px);
-  }
-
   .cartItem {
     grid-template-columns: 140px 1fr;
     gap: 20px;
@@ -359,7 +355,7 @@
 
 @media (max-width: 640px) {
   .cart {
-    padding: calc(var(--header-offset) + 4px) 16px 64px;
+    padding: 0 16px 64px;
   }
 
   .cart__header {

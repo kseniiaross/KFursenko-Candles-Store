@@ -43,8 +43,6 @@ import { useTheme } from "./theme/ThemeProvider";
 import { getProfile } from "./api/auth";
 import { useHydrateCart } from "./hooks/useHydrateCart";
 
-import "./App.css";
-
 const App: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();

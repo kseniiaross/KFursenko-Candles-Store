@@ -1,51 +1,21 @@
-:root {
-  --checkout-max: 1280px;
-  --checkout-side-pad: clamp(16px, 3vw, 40px);
+/* PAGE */
 
-  --checkout-text: rgba(17, 17, 17, 0.92);
-  --checkout-muted: rgba(17, 17, 17, 0.68);
-  --checkout-line: rgba(17, 17, 17, 0.12);
-  --checkout-line-strong: rgba(17, 17, 17, 0.22);
-
-  --checkout-surface: rgba(255, 255, 255, 0.54);
-  --checkout-surface-strong: rgba(255, 255, 255, 0.72);
-
-  --checkout-shadow: 0 18px 44px rgba(0, 0, 0, 0.08);
-  --checkout-radius: 24px;
-}
-
-[data-theme="dark"] {
-  --checkout-text: rgba(245, 239, 232, 0.95);
-  --checkout-muted: rgba(245, 239, 232, 0.72);
-  --checkout-line: rgba(255, 255, 255, 0.12);
-  --checkout-line-strong: rgba(255, 255, 255, 0.24);
-
-  --checkout-surface: rgba(20, 15, 12, 0.54);
-  --checkout-surface-strong: rgba(32, 26, 22, 0.72);
-
-  --checkout-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
-}
-
-/* 🔥 ВОТ ГЛАВНЫЙ ФИКС */
 .checkout {
   min-height: 100vh;
   min-height: 100dvh;
 
-  padding-top: calc(var(--header-height) - 20px);
-  padding-right: var(--checkout-side-pad);
-  padding-bottom: 72px;
-  padding-left: var(--checkout-side-pad);
+  padding: 0 clamp(16px, 3vw, 40px) 72px;
 
   font-family: inherit;
-  color: var(--checkout-text);
+  color: var(--app-text);
 }
 
 .checkout__inner {
-  width: min(100%, var(--checkout-max));
+  width: min(100%, 1280px);
   margin: 0 auto;
 }
 
-/* остальное НЕ трогаем */
+/* HEADER */
 
 .checkout__backWrap {
   margin-bottom: 14px;
@@ -57,7 +27,7 @@
   gap: 8px;
   min-height: 44px;
   padding: 8px 0;
-  color: var(--checkout-text);
+  color: var(--app-text);
   font-size: 0.98rem;
   line-height: 1.4;
   letter-spacing: 0.02em;
@@ -88,10 +58,11 @@
   margin: 12px auto 0;
   font-size: 1rem;
   line-height: 1.75;
-  color: var(--checkout-muted);
+  color: var(--app-text-muted);
 }
 
 /* GRID */
+
 .checkout__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.92fr);
@@ -99,24 +70,27 @@
   align-items: start;
 }
 
-/* ---------- MOBILE FIX ---------- */
+/* ========== DESKTOP TIGHTEN ========== */
 
-@media (max-width: 980px) {
-  .checkout {
-    padding-top: calc(var(--header-height) - 8px);
+@media (max-width: 1200px) {
+  .checkout__grid {
+    grid-template-columns: 1fr 1fr;
   }
+}
 
+/* ========== TABLET ========== */
+
+@media (max-width: 900px) {
   .checkout__grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 640px) {
+/* ========== MOBILE ========== */
+
+@media (max-width: 600px) {
   .checkout {
-    padding-top: calc(var(--header-height) - 4px);
-    padding-right: 16px;
-    padding-bottom: 56px;
-    padding-left: 16px;
+    padding: 0 16px 56px;
   }
 
   .checkout__title {

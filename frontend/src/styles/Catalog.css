@@ -4,7 +4,6 @@
   --catalog-grid-gap-x: 20px;
   --catalog-grid-gap-y: 40px;
   --catalog-clear-width: 104px;
-  --header-offset: 140px;
 }
 
 /* ======================================================
@@ -15,10 +14,7 @@
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: var(--header-offset);
-  padding-right: var(--catalog-side-padding);
-  padding-bottom: 110px;
-  padding-left: var(--catalog-side-padding);
+  padding: 0 var(--catalog-side-padding) 110px;
   font-family: "Times New Roman", Times, serif;
   background: transparent;
   color: var(--app-text);
@@ -439,7 +435,7 @@
    TABLET
    ====================================================== */
 
-@media (max-width: 1180px) {
+@media (max-width: 1200px) {
   .catalog__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 28px 18px;
@@ -464,10 +460,6 @@
 }
 
 @media (max-width: 980px) {
-  .catalog {
-    padding-top: calc(var(--header-offset) - 110px);
-  }
-
   .catalog__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -483,10 +475,7 @@
 
 @media (max-width: 640px) {
   .catalog {
-    padding-top: calc(var(--header-offset) - 70px);
-    padding-right: 16px;
-    padding-bottom: 88px;
-    padding-left: 16px;
+    padding: 0 16px 88px;
   }
 
   .catalog__header {

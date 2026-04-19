@@ -5,7 +5,10 @@ import { Provider } from "react-redux";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
+import "./styles/variables.css";
+import "./styles/App.css";
 import App from "./App";
+
 import { store } from "./store";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import "./i18n";

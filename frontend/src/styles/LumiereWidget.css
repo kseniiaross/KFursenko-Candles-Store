@@ -1,3 +1,7 @@
+/* =====================================================
+   ACCESSIBILITY
+   ===================================================== */
+
 .lumiereSrOnly {
   position: absolute;
   width: 1px;
@@ -9,6 +13,10 @@
   border: 0;
   white-space: nowrap;
 }
+
+/* =====================================================
+   FAB
+   ===================================================== */
 
 .lumiereFab {
   position: fixed;
@@ -57,6 +65,10 @@
   line-height: 1;
 }
 
+/* =====================================================
+   PANEL
+   ===================================================== */
+
 .lumierePanel {
   position: fixed;
   right: 18px;
@@ -76,6 +88,10 @@
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
+
+/* =====================================================
+   HEADER
+   ===================================================== */
 
 .lumiereHeader {
   display: flex;
@@ -177,6 +193,10 @@
   cursor: pointer;
 }
 
+/* =====================================================
+   BODY
+   ===================================================== */
+
 .lumiereBody {
   flex: 1;
   overflow-y: auto;
@@ -237,6 +257,10 @@
   color: rgba(17, 17, 17, 0.68);
 }
 
+/* =====================================================
+   FOOTER
+   ===================================================== */
+
 .lumiereFooter {
   display: flex;
   align-items: center;
@@ -290,6 +314,10 @@
   cursor: not-allowed;
 }
 
+/* =====================================================
+   SUGGESTIONS
+   ===================================================== */
+
 .lumiereSuggest {
   display: grid;
   grid-template-columns: 1fr;
@@ -333,7 +361,11 @@
   color: rgba(17, 17, 17, 0.68);
 }
 
-@media (max-width: 640px) {
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 600px) {
   .lumiereFab {
     right: 14px;
     bottom: 14px;
@@ -342,20 +374,23 @@
   }
 
   .lumierePanel {
-    right: 14px;
-    left: 14px;
-    bottom: 78px;
+    right: 10px;
+    left: 10px;
+    bottom: 74px;
     width: auto;
-    height: min(70vh, 600px);
+    height: min(72vh, 560px);
     border-radius: 18px;
   }
 
   .lumiereHeader {
+    flex-direction: column;
+    align-items: stretch;
     padding: 12px;
     gap: 10px;
   }
 
   .lumiereHeader__right {
+    justify-content: flex-end;
     gap: 6px;
   }
 
@@ -379,7 +414,7 @@
   }
 
   .lumiereBubble {
-    max-width: 92%;
+    max-width: 96%;
   }
 
   .lumiereFooter {
@@ -395,28 +430,6 @@
     min-height: 42px;
     padding: 0 14px;
     font-size: 0.88rem;
-  }
-}
-
-@media (max-width: 420px) {
-  .lumierePanel {
-    right: 10px;
-    left: 10px;
-    bottom: 74px;
-    height: min(72vh, 560px);
-  }
-
-  .lumiereHeader {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .lumiereHeader__right {
-    justify-content: flex-end;
-  }
-
-  .lumiereBubble {
-    max-width: 96%;
   }
 
   .lumiereCard__top {

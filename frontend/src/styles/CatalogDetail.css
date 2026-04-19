@@ -1,14 +1,8 @@
-:root {
-  --header-offset: 140px;
-}
-
 .catalogDetail {
   width: 100%;
   min-height: 100vh;
-  padding-top: var(--header-offset);
-  padding-bottom: 72px;
-  padding-left: clamp(16px, 3vw, 40px);
-  padding-right: clamp(16px, 3vw, 40px);
+  min-height: 100dvh;
+  padding: 0 clamp(16px, 3vw, 40px) 72px;
 }
 
 .catalogDetail__inner {
@@ -246,13 +240,9 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
-/* ========== TABLET ========== */
+/* ========== DESKTOP TIGHTEN ========== */
 
-@media (max-width: 1400px) {
-  .catalogDetail {
-    padding-top: calc(var(--header-height) - 56px);
-  }
-
+@media (max-width: 1200px) {
   .catalogDetail__inner {
     width: min(100%, 1240px);
   }
@@ -299,11 +289,10 @@
     font-size: 0.98rem;
   }
 }
-@media (max-width: 980px) {
-  .catalogDetail {
-    padding-top: calc(var(--header-height) - 8px);
-  }
 
+/* ========== TABLET ========== */
+
+@media (max-width: 900px) {
   .catalogDetail__layout {
     grid-template-columns: 1fr;
     gap: 28px;
@@ -323,7 +312,7 @@
 
 @media (max-width: 600px) {
   .catalogDetail {
-    padding-top: calc(var(--header-height) - 2px);
+    padding: 0 16px 64px;
   }
 
   .catalogDetail__mediaTopRow {

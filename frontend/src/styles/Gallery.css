@@ -1,20 +1,16 @@
-:root {
-  --header-offset: 138px;
+/* =====================================================
+   PAGE
+   ===================================================== */
+
+.galleryPage {
   --gallery-max-width: 1400px;
   --gallery-side-padding: 24px;
   --gallery-side-padding-mobile: 16px;
-}
 
-/* ================= PAGE ================= */
-
-.galleryPage {
   min-height: 100vh;
   min-height: 100dvh;
   padding-bottom: 88px;
-
-  /* inherit global theme font */
   font-family: inherit;
-
   color: rgba(17, 17, 17, 0.92);
 }
 
@@ -23,22 +19,24 @@
 }
 
 .galleryPage__container {
-  width: min(var(--gallery-max-width), calc(100% - (var(--gallery-side-padding) * 2)));
+  width: min(
+    var(--gallery-max-width),
+    calc(100% - (var(--gallery-side-padding) * 2))
+  );
   margin: 0 auto;
 }
 
-/* ================= HERO ================= */
+/* =====================================================
+   HERO
+   ===================================================== */
 
 .galleryPage__hero {
-  padding: calc(var(--header-offset) + 18px) 0 32px;
+  padding: 18px 0 32px;
 }
 
 .galleryPage__title {
   margin: 0 0 14px;
-
-  /* inherit theme font */
   font-family: inherit;
-
   font-size: clamp(2.25rem, 4vw, 3.75rem);
   font-weight: 700;
   line-height: 1.08;
@@ -57,7 +55,9 @@
   color: rgba(245, 239, 232, 0.74);
 }
 
-/* ================= CONTENT ================= */
+/* =====================================================
+   CONTENT
+   ===================================================== */
 
 .galleryPage__content {
   padding: 0;
@@ -87,7 +87,9 @@
   color: #ffb4b4;
 }
 
-/* ================= GRID ================= */
+/* =====================================================
+   GRID
+   ===================================================== */
 
 .galleryGrid {
   display: grid;
@@ -95,7 +97,9 @@
   gap: 28px;
 }
 
-/* ================= CARD ================= */
+/* =====================================================
+   CARD
+   ===================================================== */
 
 .galleryCard {
   overflow: hidden;
@@ -136,10 +140,7 @@
 
 .galleryCard__title {
   margin: 0 0 10px;
-
-  /* inherit theme font */
   font-family: inherit;
-
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
@@ -157,7 +158,9 @@
   color: rgba(245, 239, 232, 0.75);
 }
 
-/* ================= ACCESSIBILITY ================= */
+/* =====================================================
+   ACCESSIBILITY
+   ===================================================== */
 
 .galleryCard__video:focus-visible {
   outline: 3px solid rgba(17, 17, 17, 0.84);
@@ -168,9 +171,11 @@
   outline: 3px solid rgba(255, 255, 255, 0.92);
 }
 
-/* ================= RESPONSIVE ================= */
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
 
-@media (max-width: 980px) {
+@media (max-width: 900px) {
   .galleryGrid {
     grid-template-columns: 1fr;
   }
@@ -181,13 +186,16 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
   .galleryPage__container {
-    width: min(var(--gallery-max-width), calc(100% - (var(--gallery-side-padding-mobile) * 2)));
+    width: min(
+      var(--gallery-max-width),
+      calc(100% - (var(--gallery-side-padding-mobile) * 2))
+    );
   }
 
   .galleryPage__hero {
-    padding: calc(var(--header-offset) + 8px) 0 24px;
+    padding: 8px 0 24px;
   }
 
   .galleryPage__title {

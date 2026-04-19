@@ -1,5 +1,8 @@
-:root {
-  --header-offset: 138px;
+/* =====================================================
+   PAGE
+   ===================================================== */
+
+.register {
   --register-page-max: 760px;
   --register-side-pad: 24px;
 
@@ -13,16 +16,11 @@
 
   --register-primary: #e6ddd2;
   --register-primary-hover: #d9cec1;
-}
 
-/* Page wrapper.
-   Local background is intentionally removed because the app now uses
-   the global theme background controlled by ThemeProvider. */
-.register {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(var(--header-offset) + 36px) var(--register-side-pad) 72px;
+  padding: 36px var(--register-side-pad) 72px;
   color: var(--register-ink);
   font-family: inherit;
 }
@@ -31,6 +29,10 @@
   width: min(100%, var(--register-page-max));
   margin: 0 auto;
 }
+
+/* =====================================================
+   PANEL
+   ===================================================== */
 
 .register__panel {
   border-radius: 28px;
@@ -48,6 +50,10 @@
   color: rgba(245, 239, 232, 0.94);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
 }
+
+/* =====================================================
+   HEADER
+   ===================================================== */
 
 .register__header {
   margin-bottom: 28px;
@@ -89,6 +95,10 @@
   color: rgba(245, 239, 232, 0.76);
 }
 
+/* =====================================================
+   FORM
+   ===================================================== */
+
 .register__form {
   display: flex;
   flex-direction: column;
@@ -111,6 +121,10 @@
   grid-column: 1 / -1;
 }
 
+/* =====================================================
+   LABELS
+   ===================================================== */
+
 .register__label {
   margin-bottom: 8px;
   font-size: 0.78rem;
@@ -123,6 +137,10 @@
 [data-theme="dark"] .register__label {
   color: rgba(245, 239, 232, 0.72);
 }
+
+/* =====================================================
+   INPUTS
+   ===================================================== */
 
 .register__input {
   width: 100%;
@@ -174,6 +192,10 @@
   border-color: rgba(156, 42, 42, 0.8);
 }
 
+/* =====================================================
+   MESSAGES
+   ===================================================== */
+
 .register__message {
   margin: 8px 0 0;
   font-size: 0.9rem;
@@ -199,6 +221,10 @@
   border-top-color: rgba(255, 255, 255, 0.12);
   color: #ffb6b6;
 }
+
+/* =====================================================
+   ACTIONS
+   ===================================================== */
 
 .register__actions {
   display: grid;
@@ -279,9 +305,13 @@ button.register__cta:disabled {
   transform: none;
 }
 
-@media (max-width: 760px) {
+/* =====================================================
+   TABLET
+   ===================================================== */
+
+@media (max-width: 900px) {
   .register {
-    padding: calc(var(--header-offset) + 24px) 16px 56px;
+    padding: 24px 16px 56px;
   }
 
   .register__panel {
@@ -312,6 +342,20 @@ button.register__cta:disabled {
     letter-spacing: 0.12em;
   }
 }
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+  .register {
+    padding: 24px 16px 56px;
+  }
+}
+
+/* =====================================================
+   REDUCED MOTION
+   ===================================================== */
 
 @media (prefers-reduced-motion: reduce) {
   .register__input,

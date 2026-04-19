@@ -224,7 +224,7 @@
    RESPONSIVE
    ===================================================== */
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .footer__inner {
     width: calc(100% - 36px);
     padding: 38px 0 24px;
@@ -236,12 +236,7 @@
   }
 }
 
-@media (max-width: 680px) {
-  .footer__inner {
-    width: calc(100% - 24px);
-    padding: 28px 0 18px;
-  }
-
+@media (max-width: 900px) {
   .footer__top {
     flex-direction: column;
     align-items: flex-start;
@@ -255,6 +250,13 @@
 
   .footer__tagline {
     font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer__inner {
+    width: calc(100% - 24px);
+    padding: 28px 0 18px;
   }
 
   .footer__socialLink {

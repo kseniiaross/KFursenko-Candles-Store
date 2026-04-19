@@ -1,31 +1,29 @@
-:root {
-  --login-header-offset: 138px;
-}
-
-/* PAGE */
+/* =====================================================
+   PAGE
+   ===================================================== */
 
 .login {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: calc(var(--login-header-offset) + 60px);
+  padding-top: 60px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  font-family: inherit;}
+  font-family: inherit;
+}
 
-/* LOCAL BACKGROUND */
+/* =====================================================
+   LOCAL BACKGROUND
+   ===================================================== */
 
 .login::before {
   content: "";
   position: fixed;
   inset: 0;
-
   background: url("../assets/images/login-bg.jpg") center / cover no-repeat;
-
   filter: blur(14px) brightness(1.04);
   transform: scale(1.05);
-
   z-index: -2;
 }
 
@@ -33,19 +31,21 @@
   content: "";
   position: fixed;
   inset: 0;
-
-  background: rgba(255,255,255,0.72);
-
+  background: rgba(255, 255, 255, 0.72);
   z-index: -1;
 }
 
-/* CONTAINER */
+/* =====================================================
+   CONTAINER
+   ===================================================== */
 
 .login__container {
   width: min(520px, 92vw);
 }
 
-/* HEADER */
+/* =====================================================
+   HEADER
+   ===================================================== */
 
 .login__header {
   text-align: center;
@@ -66,22 +66,23 @@
   opacity: 0.7;
 }
 
-/* FORM */
+/* =====================================================
+   FORM
+   ===================================================== */
 
 .login__form {
   display: flex;
   flex-direction: column;
   gap: 22px;
-
   padding: 60px;
-
-  background: rgba(255,255,255,0.45);
+  background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(20px);
-
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* FIELD */
+/* =====================================================
+   FIELD
+   ===================================================== */
 
 .login__field {
   display: flex;
@@ -96,22 +97,20 @@
   opacity: 0.65;
 }
 
-/* INPUT */
+/* =====================================================
+   INPUT
+   ===================================================== */
 
 .login__input {
   padding: 14px;
-
   font-size: 14px;
-
-  border: 1px solid rgba(0,0,0,0.12);
-
-  background: rgba(255,255,255,0.85);
-
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.85);
   outline: none;
 }
 
 .login__input:focus {
-  border-color: rgba(0,0,0,0.25);
+  border-color: rgba(0, 0, 0, 0.25);
 }
 
 .login__input:focus-visible {
@@ -119,36 +118,32 @@
   outline-offset: 2px;
 }
 
-/* ACTIONS */
+/* =====================================================
+   ACTIONS
+   ===================================================== */
 
 .login__actions {
   display: flex;
   flex-direction: column;
   gap: 16px;
-
   margin-top: 10px;
 }
 
-/* BUTTONS */
+/* =====================================================
+   BUTTONS
+   ===================================================== */
 
 .login__button {
   padding: 16px;
-
   font-size: 13px;
   font-weight: 600;
-
   letter-spacing: 0.2em;
   text-transform: uppercase;
-
   cursor: pointer;
-
   text-decoration: none;
   text-align: center;
-
   transition: background 0.25s ease;
 }
-
-/* PRIMARY */
 
 .login__button--primary {
   background: #e8dfd6;
@@ -160,19 +155,19 @@
   background: #d8cec3;
 }
 
-/* SECONDARY */
-
 .login__button--secondary {
   background: transparent;
-  border: 1px solid rgba(0,0,0,0.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   color: #555;
 }
 
 .login__button--secondary:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
 }
 
-/* ERRORS */
+/* =====================================================
+   ERRORS
+   ===================================================== */
 
 .login__error {
   font-size: 12px;
@@ -186,9 +181,14 @@
   text-align: center;
 }
 
-/* MOBILE */
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
+  .login {
+    padding-top: 32px;
+  }
 
   .login__form {
     padding: 40px 28px;
