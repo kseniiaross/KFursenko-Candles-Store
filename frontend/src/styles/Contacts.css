@@ -1,4 +1,8 @@
-.contacts {
+/* =====================================================
+   VARIABLES
+   ===================================================== */
+
+:root {
   --contacts-max-width: 980px;
   --contacts-text: rgba(17, 17, 17, 0.94);
   --contacts-muted: rgba(17, 17, 17, 0.72);
@@ -6,7 +10,13 @@
   --contacts-surface: rgba(255, 255, 255, 0.5);
   --contacts-surface-strong: rgba(255, 255, 255, 0.68);
   --contacts-shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
+}
 
+/* =====================================================
+   PAGE
+   ===================================================== */
+
+.contacts {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 0 24px 72px;
@@ -27,6 +37,10 @@
   width: min(100%, var(--contacts-max-width));
   margin: 0 auto;
 }
+
+/* =====================================================
+   HERO
+   ===================================================== */
 
 .contacts__hero {
   text-align: center;
@@ -61,6 +75,10 @@
   color: var(--contacts-muted);
 }
 
+/* =====================================================
+   CARD / CONTENT
+   ===================================================== */
+
 .contacts__card {
   background: var(--contacts-surface);
   backdrop-filter: blur(16px);
@@ -87,7 +105,6 @@
 
 .contacts__cardTitle {
   margin: 0 0 18px;
-  font-family: inherit;
   font-size: clamp(1.7rem, 3vw, 2.45rem);
   line-height: 1.12;
   font-weight: 700;
@@ -106,6 +123,10 @@
   color: var(--contacts-soft);
 }
 
+/* =====================================================
+   ACTIONS
+   ===================================================== */
+
 .contacts__emailLink {
   display: inline-flex;
   align-items: center;
@@ -117,16 +138,17 @@
   background: var(--contacts-surface-strong);
   color: var(--contacts-text);
   text-decoration: none;
-  font-family: inherit;
   font-size: 1.02rem;
   line-height: 1.2;
   letter-spacing: 0.02em;
   word-break: break-word;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.05);
-  transition:
-    transform 180ms ease,
-    opacity 180ms ease,
-    background 180ms ease;
+  transition: transform 180ms ease, opacity 180ms ease, background 180ms ease;
+}
+
+.contacts__emailLink:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
 }
 
 .contacts__emailLink:focus-visible {
@@ -138,17 +160,16 @@
   outline: 3px solid rgba(255, 255, 255, 0.92);
 }
 
-.contacts__emailLink:hover {
-  transform: translateY(-1px);
-  opacity: 0.92;
-}
-
 .contacts__note {
   margin: 16px 0 0;
   font-size: 0.95rem;
   line-height: 1.7;
   color: var(--contacts-soft);
 }
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
 
 @media (max-width: 600px) {
   .contacts {
@@ -161,7 +182,6 @@
 
   .contacts__title {
     font-size: clamp(2rem, 10vw, 2.8rem);
-    letter-spacing: 0.03em;
   }
 
   .contacts__subtitle {
@@ -180,13 +200,11 @@
 
   .contacts__text {
     font-size: 0.98rem;
-    line-height: 1.8;
   }
 
   .contacts__emailLink {
     width: 100%;
     padding-inline: 16px;
-    text-align: center;
   }
 
   .contacts__note {

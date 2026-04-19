@@ -2,9 +2,11 @@
    PAGE
    ===================================================== */
 
-.rr {
+:root {
   --rr-max-width: 980px;
+}
 
+.rr {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 14px 24px 72px;

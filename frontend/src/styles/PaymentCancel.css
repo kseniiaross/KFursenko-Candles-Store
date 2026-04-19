@@ -1,10 +1,11 @@
 /* =====================================================
    PAGE
    ===================================================== */
+:root {
+  --payment-cancel-max-width: 760px;
+}
 
 .paymentCancel {
-  --payment-cancel-max-width: 760px;
-
   min-height: 100vh;
   min-height: 100dvh;
   padding: 28px 24px 88px;

@@ -2,9 +2,11 @@
    PAGE
    ===================================================== */
 
-.paymentSuccess {
+:root {
   --payment-success-max-width: 760px;
+}
 
+.paymentSuccess {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 28px 24px 88px;

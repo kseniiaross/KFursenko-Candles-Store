@@ -101,7 +101,7 @@ const StoryMission: React.FC = () => {
           <div className="story__heroInner">
             <h1 className="story__title">Story &amp; Mission</h1>
             <p className="story__subtitle">
-              KFursenko Candles by Kseniia Fursenko, New York — slow luxury, made
+              KFursenko Candles by Kseniia Fursenko, New York - slow luxury, made
               to feel like home.
             </p>
 

@@ -2,9 +2,10 @@
    PAGE
    ===================================================== */
 
-.profile {
+:root {
   --profile-max-width: 800px;
-
+}
+.profile {
   padding: 16px 40px 120px;
   font-family: inherit;
   color: rgba(17, 17, 17, 0.94);

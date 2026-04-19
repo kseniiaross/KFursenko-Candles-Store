@@ -1,16 +1,16 @@
 /* =====================================================
    PAGE
    ===================================================== */
-
-.reviewsPage {
+:root {
   --reviews-page-max: 1400px;
   --reviews-side-pad: 24px;
-
   --reviews-ink: rgba(17, 17, 17, 0.94);
   --reviews-muted: rgba(17, 17, 17, 0.72);
   --reviews-line: rgba(17, 17, 17, 0.1);
   --reviews-shadow: 0 20px 56px rgba(17, 17, 17, 0.08);
+}
 
+.reviewsPage {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 8px 0 80px;

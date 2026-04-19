@@ -1,11 +1,12 @@
 /* =====================================================
    PAGE
    ===================================================== */
-
-.ordersPage {
+:root {
   --orders-page-max: 1200px;
   --orders-side-pad: 24px;
+}
 
+.ordersPage {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 28px var(--orders-side-pad) 88px;

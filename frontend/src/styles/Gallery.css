@@ -1,12 +1,13 @@
 /* =====================================================
    PAGE
    ===================================================== */
-
-.galleryPage {
+:root {
   --gallery-max-width: 1400px;
   --gallery-side-padding: 24px;
   --gallery-side-padding-mobile: 16px;
+}
 
+.galleryPage {
   min-height: 100vh;
   min-height: 100dvh;
   padding-bottom: 88px;
