@@ -26,25 +26,22 @@ export type ProfileResponse = {
   is_staff?: boolean;
 };
 
-export async function register(payload: RegisterPayload): Promise<ProfileResponse> {
+export async function register(
+  payload: RegisterPayload
+): Promise<ProfileResponse> {
   const response = await api.post<ProfileResponse>("/accounts/register/", payload);
   return response.data;
 }
 
-export async function login(payload: TokenPayload): Promise<TokenResponse> {
+export async function login(
+  payload: TokenPayload
+): Promise<TokenResponse> {
   const response = await api.post<TokenResponse>("/accounts/login/", payload);
   return response.data;
 }
 
-export async function getProfile(accessToken?: string): Promise<ProfileResponse> {
-  const response = await api.get<ProfileResponse>("/accounts/profile/", {
-    headers: accessToken
-      ? {
-          Authorization: `Bearer ${accessToken}`,
-        }
-      : undefined,
-  });
-
+export async function getProfile(): Promise<ProfileResponse> {
+  const response = await api.get<ProfileResponse>("/accounts/profile/");
   return response.data;
 }
 
@@ -55,12 +52,22 @@ export async function loginWithProfile(
   user: ProfileResponse;
 }> {
   const tokens = await login(payload);
-  const user = await getProfile(tokens.access);
 
-  return {
-    tokens,
-    user,
-  };
+  localStorage.setItem("accessToken", tokens.access);
+  localStorage.setItem("refreshToken", tokens.refresh);
+
+  try {
+    const user = await getProfile();
+
+    return {
+      tokens,
+      user,
+    };
+  } catch (error) {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    throw error;
+  }
 }
 
 export async function registerThenLoginWithProfile(
@@ -76,10 +83,19 @@ export async function registerThenLoginWithProfile(
     password: payload.password,
   });
 
-  const user = await getProfile(tokens.access);
+  localStorage.setItem("accessToken", tokens.access);
+  localStorage.setItem("refreshToken", tokens.refresh);
 
-  return {
-    user,
-    tokens,
-  };
+  try {
+    const user = await getProfile();
+
+    return {
+      user,
+      tokens,
+    };
+  } catch (error) {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    throw error;
+  }
 }

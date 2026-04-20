@@ -1,5 +1,11 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { clearAuthStorage, getAccessToken, setAccessToken, setRefreshToken } from "../utils/token";
+import {
+  clearAuthStorage,
+  getAccessToken,
+  getRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+} from "../utils/token";
 import type { AuthState, User } from "../types/auth";
 
 type CredentialsPayload = {
@@ -9,7 +15,8 @@ type CredentialsPayload = {
 };
 
 const initialState: AuthState = {
-  token: getAccessToken(),
+  accessToken: getAccessToken(),
+  refreshToken: getRefreshToken(),
   user: null,
   isLoggedIn: Boolean(getAccessToken()),
 };
@@ -20,26 +27,34 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (state, action: PayloadAction<CredentialsPayload>) => {
       const access = String(action.payload.access || "").trim();
-      const refresh = action.payload.refresh ? String(action.payload.refresh).trim() : "";
+      const refresh = action.payload.refresh
+        ? String(action.payload.refresh).trim()
+        : "";
 
       if (!access) {
-        state.token = null;
+        state.accessToken = null;
+        state.refreshToken = null;
         state.user = null;
         state.isLoggedIn = false;
         clearAuthStorage();
         return;
       }
 
-      state.token = access;
+      state.accessToken = access;
+      state.refreshToken = refresh || null;
       state.user = action.payload.user ?? null;
       state.isLoggedIn = true;
 
       setAccessToken(access);
-      if (refresh) setRefreshToken(refresh);
+
+      if (refresh) {
+        setRefreshToken(refresh);
+      }
     },
 
     logout: (state) => {
-      state.token = null;
+      state.accessToken = null;
+      state.refreshToken = null;
       state.user = null;
       state.isLoggedIn = false;
       clearAuthStorage();
