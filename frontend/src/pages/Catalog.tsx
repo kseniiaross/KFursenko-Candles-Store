@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Candle, Category, CandleBadge } from "../types/candle";
 import { listCandles, listCategories } from "../api/candles";
@@ -17,6 +17,7 @@ function normalizeBadges(badges?: CandleBadge[]): CandleBadge[] {
 const Catalog: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const { categorySlug } = useParams<{ categorySlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -48,18 +49,23 @@ const Catalog: React.FC = () => {
         setLoading(true);
         setError("");
 
-        const [categoriesData, candlesData] = await Promise.all([
-          listCategories(),
-          listCandles({
-            search: q.trim() ? q.trim() : undefined,
-            category: categoryId,
-            ordering: "-created_at",
-          }),
-        ]);
-
+        const categoriesData = await listCategories();
         if (!active) return;
 
         setCategories(categoriesData);
+
+        const resolvedCategoryId = categorySlug
+          ? categoriesData.find((category) => category.slug === categorySlug)?.id
+          : categoryId;
+
+        const candlesData = await listCandles({
+          search: q.trim() ? q.trim() : undefined,
+          category: resolvedCategoryId,
+          ordering: "-created_at",
+        });
+
+        if (!active) return;
+
         setCandles(candlesData);
       } catch {
         if (!active) return;
@@ -73,7 +79,7 @@ const Catalog: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [q, categoryId, t]);
+  }, [q, categoryId, categorySlug, t]);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(candles.length / ITEMS_PER_PAGE));
@@ -230,7 +236,7 @@ const Catalog: React.FC = () => {
                 const coverUrl = product.image ?? "";
                 if (!coverUrl) return null;
 
-                const destination = `/catalog/${product.slug}`;
+                const destination = `/catalog/item/${product.slug}`;
                 const badges = normalizeBadges(product.badges);
                 const showSoldOut = Boolean(product.is_sold_out);
                 const showBestseller = Boolean(product.is_bestseller);

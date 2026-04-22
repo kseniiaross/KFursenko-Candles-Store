@@ -63,7 +63,7 @@ const App: React.FC = () => {
 
     const loadProfile = async () => {
       try {
-        const user = await getProfile(token);
+        const user = await getProfile();
         if (isMounted) dispatch(setUser(user));
       } catch {
         if (isMounted) {
@@ -109,7 +109,8 @@ const App: React.FC = () => {
           />
 
           <Route path="/catalog" element={<Catalog />} />
-          <Route path="/catalog/:slug" element={<CatalogDetail />} />
+          <Route path="/catalog/category/:categorySlug" element={<Catalog />} />
+          <Route path="/catalog/item/:slug" element={<CatalogDetail />} />
 
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />

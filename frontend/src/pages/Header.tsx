@@ -113,13 +113,13 @@ const Header: React.FC<HeaderProps> = ({ firstName, isLoggedIn, onLogout }) => {
     () => ({
       candles: [
         { label: t("header.allCandles"), to: "/catalog" },
-        { label: t("header.containerCandles"), to: "/catalog/container" },
-        { label: t("header.moldedCandles"), to: "/catalog/molded" },
+        { label: t("header.containerCandles"), to: "/catalog/category/container" },
+        { label: t("header.moldedCandles"), to: "/catalog/category/molded" },
         { label: t("header.springSummer"), to: "/collections/spring-summer" },
         { label: t("header.autumnWinter"), to: "/collections/autumn-winter" },
         { label: t("header.customCandle"), to: "/custom-candle" },
-        { label: t("header.singleWick"), to: "/catalog/single-wick" },
-        { label: t("header.multipleWick"), to: "/catalog/multiple-wick" },
+        { label: t("header.singleWick"), to: "/catalog/category/single-wick" },
+        { label: t("header.multipleWick"), to: "/catalog/category/multiple-wick" },
         { label: t("header.candleHolders"), to: "/candle-holders" },
       ],
       offers: [
