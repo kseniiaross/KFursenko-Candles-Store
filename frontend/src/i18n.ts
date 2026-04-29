@@ -7,7 +7,9 @@ const SUPPORTED_LANGUAGES = ["en", "ru", "es", "fr"] as const;
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 function isSupportedLanguage(value: string | null): value is SupportedLanguage {
-  return Boolean(value && SUPPORTED_LANGUAGES.includes(value as SupportedLanguage));
+  return Boolean(
+    value && SUPPORTED_LANGUAGES.includes(value as SupportedLanguage),
+  );
 }
 
 const resources = {
@@ -197,7 +199,8 @@ const resources = {
       register: {
         pageLabel: "Register page",
         title: "Create account",
-        subtitle: "Create your account to save details and place orders faster.",
+        subtitle:
+          "Create your account to save details and place orders faster.",
         firstName: "First name",
         lastName: "Last name",
         phone: "Phone number",
@@ -360,7 +363,8 @@ const resources = {
         profileUpdated: "Profile updated.",
         profileUpdateFailed: "Failed to update profile.",
         deleteTitle: "Delete account?",
-        deleteText: "This will permanently delete your account and profile data.",
+        deleteText:
+          "This will permanently delete your account and profile data.",
         deleteConfirm: "Yes, delete",
         deleting: "Deleting...",
         deleteCancel: "Cancel",
@@ -600,7 +604,8 @@ const resources = {
       login: {
         pageLabel: "Страница входа",
         title: "Войти",
-        subtitle: "Войдите, чтобы продолжить покупки и управлять своими заказами.",
+        subtitle:
+          "Войдите, чтобы продолжить покупки и управлять своими заказами.",
         email: "Email",
         password: "Пароль",
         register: "Создать аккаунт",
@@ -653,7 +658,8 @@ const resources = {
           "Мы всегда готовы помочь по вопросам заказов, доставки и продукции.",
         subtitleLine2: "Лучший способ связаться с нами — по email.",
         supportEmail: "Email поддержки",
-        responseTime: "Мы стараемся отвечать максимально быстро в рабочее время.",
+        responseTime:
+          "Мы стараемся отвечать максимально быстро в рабочее время.",
         madeWithCare: "Сделано с заботой",
         careText1:
           "Каждая свеча создаётся с вниманием к деталям, упаковке и подаче.",
@@ -664,8 +670,7 @@ const resources = {
       support: {
         pageLabel: "Страница поддержки",
         title: "Поддержка",
-        subtitle:
-          "Мы поможем с заказами, доставкой и вопросами по продукции.",
+        subtitle: "Мы поможем с заказами, доставкой и вопросами по продукции.",
         emailLabel: "Поддержка по email",
         emailNote:
           "Самый быстрый способ связаться с нами — по email. Если вопрос касается заказа, укажите номер заказа.",
@@ -782,7 +787,8 @@ const resources = {
         profileUpdated: "Профиль обновлён.",
         profileUpdateFailed: "Не удалось обновить профиль.",
         deleteTitle: "Удалить аккаунт?",
-        deleteText: "Это действие навсегда удалит ваш аккаунт и данные профиля.",
+        deleteText:
+          "Это действие навсегда удалит ваш аккаунт и данные профиля.",
         deleteConfirm: "Да, удалить",
         deleting: "Удаление...",
         deleteCancel: "Отмена",
@@ -816,7 +822,8 @@ const resources = {
         chooseMood: "Выберите настроение",
         moodHelp: "Настроение задаёт общее ощущение аромата.",
         chooseSpace: "Где вы будете использовать свечу?",
-        spaceHelp: "Пространство помогает определить правильное ароматическое направление.",
+        spaceHelp:
+          "Пространство помогает определить правильное ароматическое направление.",
         pickNotes: "Выберите 1–3 ноты",
         notesHelp: "Эти ноты сильнее всего влияют на ароматический профиль.",
         selectedCount: "Выбрано: {{count}} / 3",
@@ -837,7 +844,8 @@ const resources = {
           "Сначала пройдите квиз, чтобы мы могли подобрать для вас свечу.",
         startQuiz: "Начать квиз",
         eyebrow: "Ваш индивидуальный ароматический профиль",
-        title: "{{name}}, вот направление свечи, которое подходит вам лучше всего",
+        title:
+          "{{name}}, вот направление свечи, которое подходит вам лучше всего",
         subtitle:
           "На основе ваших ответов мы подобрали ароматический профиль, который будет ощущаться наиболее естественно, красиво и уместно в вашем пространстве.",
         badge: "Рекомендованное настроение",
@@ -967,7 +975,8 @@ const resources = {
         occasion: "Ocasión",
         takeQuiz: "Hacer el quiz",
         browseCatalog: "Ver catálogo",
-        aiHint: "Usamos tu perfil para encontrar una dirección aromática más acertada.",
+        aiHint:
+          "Usamos tu perfil para encontrar una dirección aromática más acertada.",
       },
 
       catalog: {
@@ -1013,8 +1022,7 @@ const resources = {
         notifyMe: "Avísame",
         addToCart: "Añadir al carrito",
         collectionScents: "Aromas de esta colección",
-        collectionScentsSubtitle:
-          "Explora otros aromas de la misma colección.",
+        collectionScentsSubtitle: "Explora otros aromas de la misma colección.",
         openScent: "Abrir aroma",
       },
 
@@ -1028,6 +1036,256 @@ const resources = {
         empty: "Aún no hay reseñas disponibles.",
         gridLabel: "Galería de reseñas",
         reviewImageAlt: "Captura de reseña de cliente",
+      },
+      login: {
+        pageLabel: "Página de inicio de sesión",
+        title: "Iniciar sesión",
+        subtitle:
+          "Inicia sesión para seguir comprando y gestionar tus pedidos.",
+        email: "Email",
+        password: "Contraseña",
+        register: "Crear cuenta",
+        loggingIn: "Iniciando sesión...",
+        errors: {
+          network: "Error de red. Inténtalo de nuevo.",
+          invalidCredentials: "Email o contraseña incorrectos.",
+          generic: "Algo salió mal. Inténtalo de nuevo.",
+          loginFailed: "No se pudo iniciar sesión. Inténtalo de nuevo.",
+          emailRequired: "El email es obligatorio.",
+          emailInvalid: "Introduce un email válido.",
+          passwordRequired: "La contraseña es obligatoria.",
+        },
+      },
+
+      register: {
+        pageLabel: "Página de registro",
+        title: "Crear cuenta",
+        subtitle:
+          "Crea tu cuenta para guardar tus datos y hacer pedidos más rápido.",
+        firstName: "Nombre",
+        lastName: "Apellido",
+        phone: "Número de teléfono",
+        email: "Email",
+        password: "Contraseña",
+        register: "Crear cuenta",
+        logIn: "Iniciar sesión",
+        creating: "Creando cuenta...",
+        errors: {
+          network: "Error de red. Inténtalo de nuevo.",
+          invalidForm: "Revisa tu información e inténtalo de nuevo.",
+          failed: "No se pudo crear tu cuenta.",
+          loginAfterRegisterFailed:
+            "La cuenta fue creada, pero el inicio de sesión automático falló. Inicia sesión manualmente.",
+          firstNameRequired: "El nombre es obligatorio.",
+          lastNameRequired: "El apellido es obligatorio.",
+          phoneRequired: "El teléfono es obligatorio.",
+          phoneInvalid: "Introduce un número de teléfono válido.",
+          emailRequired: "El email es obligatorio.",
+          emailInvalid: "Introduce un email válido.",
+          passwordRequired: "La contraseña es obligatoria.",
+          passwordMin: "La contraseña debe tener al menos 8 caracteres.",
+        },
+      },
+
+      contacts: {
+        pageLabel: "Página de contacto",
+        title: "Contactos",
+        subtitleLine1:
+          "Estamos encantados de ayudar con pedidos, entrega y preguntas sobre productos.",
+        subtitleLine2: "El email es la mejor forma de contactarnos.",
+        supportEmail: "Email de soporte",
+        responseTime:
+          "Normalmente respondemos lo antes posible durante el horario laboral.",
+        madeWithCare: "Hecho con cuidado",
+        careText1:
+          "Cada vela se prepara con atención al detalle, al embalaje y a la presentación.",
+        careText2:
+          "Si tienes una solicitud especial, una pregunta sobre regalos o un problema con tu pedido, contáctanos por email.",
+      },
+
+      support: {
+        pageLabel: "Página de soporte",
+        title: "Soporte",
+        subtitle:
+          "Estamos aquí para ayudar con pedidos, preguntas de envío y detalles de productos.",
+        emailLabel: "Soporte por email",
+        emailNote:
+          "La forma más rápida de contactarnos es por email. Incluye tu número de pedido si tu pregunta está relacionada con una compra existente.",
+        responseTitle: "Tiempo de respuesta",
+        responseText:
+          "Intentamos responder lo antes posible. El tiempo de respuesta puede variar durante periodos de alta demanda, fines de semana o festivos.",
+        helpTitle: "Con qué podemos ayudar",
+        helpItem1: "Estado del pedido y preguntas de entrega",
+        helpItem2: "Detalles del producto y cuidado de velas",
+        helpItem3: "Preguntas relacionadas con regalos",
+        helpItem4: "Problemas con pedidos dañados o incorrectos",
+      },
+
+      storyMission: {
+        pageLabel: "Página de historia y misión",
+        title: "Historia y misión",
+        subtitle:
+          "Una mirada más cercana a la marca, el proceso y la sensación detrás de cada vela.",
+        quickNavigation: "Navegación rápida",
+        story: "Historia",
+        mission: "Misión",
+        shop: "Comprar",
+        illustratedStory: "Historia ilustrada",
+        highlights: "Aspectos destacados",
+        storyCallout:
+          "Creamos velas que se sienten intencionales, elegantes y personales, hechas para llevar calidez y belleza a los espacios cotidianos.",
+        missionCallout:
+          "Nuestra misión es hacer que las fragancias para el hogar se sientan elevadas, accesibles y cuidadosamente elaboradas.",
+      },
+
+      gallery: {
+        pageLabel: "Página de galería",
+        title: "Galería",
+        subtitle:
+          "Un espacio curado para visuales de marca, trabajos con velas y momentos en video de KFursenko Candles.",
+        loading: "Cargando galería...",
+        loadError: "No se pudo cargar la galería.",
+        empty: "La galería está vacía por ahora.",
+        gridLabel: "Elementos de galería",
+      },
+
+      checkout: {
+        pageLabel: "Página de pago",
+        title: "Realiza tu pedido",
+        backToCart: "Volver al carrito",
+        orderSummary: "Resumen del pedido",
+        subtotal: "Subtotal",
+        shipping: "Envío",
+        tax: "Impuesto",
+        total: "Total",
+        fullName: "Nombre completo",
+        streetAddress: "Dirección",
+        apartment: "Apto / Unidad",
+        city: "Ciudad",
+        state: "Estado",
+        zipCode: "Código postal",
+        country: "País",
+        continueToPayment: "Continuar al pago",
+        preparingPayment: "Preparando pago...",
+        payNow: "Pagar ahora",
+        processing: "Procesando...",
+        paymentReady: "Pago listo",
+        createOrderError: "No se pudo preparar el pago. Inténtalo de nuevo.",
+      },
+
+      orders: {
+        pageLabel: "Página de pedidos",
+        title: "Pedidos",
+        subtitle: "Tus compras recientes y detalles de pedidos.",
+        ordersMeta: "Información de pedidos",
+        loading: "Cargando tus pedidos...",
+        retry: "Reintentar",
+        noOrders: "Aún no hay pedidos",
+        noOrdersText: "Cuando realices un pedido, aparecerá aquí.",
+        browseCandles: "Ver velas",
+        goToProfile: "Ir al perfil",
+        order: "Pedido",
+        items: "Artículos",
+        shippingAccount: "Envío y cuenta",
+        needHelp: "¿Necesitas ayuda?",
+      },
+
+      profile: {
+        pageLabel: "Página de perfil",
+        title: "Perfil",
+        subtitle: "Gestiona tu cuenta y los datos de envío.",
+        account: "Cuenta",
+        shippingAddress: "Dirección de envío",
+        firstName: "Nombre",
+        lastName: "Apellido",
+        email: "Email",
+        streetAddress: "Dirección",
+        apartment: "Apto / Unidad",
+        city: "Ciudad",
+        state: "Estado",
+        zipCode: "Código postal",
+        country: "País",
+        saveChanges: "Guardar cambios",
+        saving: "Guardando...",
+        changePassword: "Cambiar contraseña",
+        deleteAccount: "Eliminar cuenta",
+        profileUpdated: "Perfil actualizado.",
+        profileUpdateFailed: "No se pudo actualizar el perfil.",
+        deleteTitle: "¿Eliminar cuenta?",
+        deleteText:
+          "Esto eliminará permanentemente tu cuenta y los datos del perfil.",
+        deleteConfirm: "Sí, eliminar",
+        deleting: "Eliminando...",
+        deleteCancel: "Cancelar",
+      },
+
+      paymentSuccess: {
+        pageLabel: "Página de pago exitoso",
+        title: "Pago exitoso",
+        subtitle: "Gracias. Tu pedido ha sido confirmado.",
+        backToCatalog: "Volver al catálogo",
+      },
+
+      paymentCancel: {
+        pageLabel: "Página de pago cancelado",
+        title: "Pago cancelado",
+        subtitle:
+          "No pasa nada — puedes volver al checkout e intentarlo de nuevo.",
+        backToCheckout: "Volver al checkout",
+      },
+
+      recommendationQuiz: {
+        pageLabel: "Página del quiz de aromas",
+        title: "Encuentra tu ambiente de vela",
+        subtitle:
+          "Responde algunas preguntas rápidas y descubre el estilo de vela que encaja con tu espacio, estado de ánimo y momento.",
+        progress: "Progreso del quiz",
+        yourName: "Tu nombre",
+        personalize: "Personalizaremos tu resultado.",
+        name: "Nombre",
+        namePlaceholder: "por ejemplo, Kseniia",
+        nameRequired: "Introduce tu nombre para continuar.",
+        chooseMood: "Elige tu estado de ánimo",
+        moodHelp: "El estado de ánimo define la sensación general del aroma.",
+        chooseSpace: "¿Dónde la usarás?",
+        spaceHelp:
+          "Tu espacio nos ayuda a elegir la dirección aromática correcta.",
+        pickNotes: "Elige 1–3 notas",
+        notesHelp: "Estas notas influyen más en tu perfil aromático.",
+        selectedCount: "Seleccionadas: {{count}} / 3",
+        notesRequired: "Selecciona al menos 1 nota.",
+        intensity: "Intensidad",
+        intensityHelp: "Elige qué tan notable quieres que sea el aroma.",
+        seasonOccasion: "Temporada + ocasión",
+        seasonOccasionHelp:
+          "Estos detalles ajustan mejor tu recomendación final.",
+        season: "Temporada",
+        occasion: "Ocasión",
+        generateResult: "Ver mi recomendación",
+      },
+
+      recommendationResult: {
+        pageLabel: "Página del resultado de recomendación",
+        emptyTitle: "Aún no hay resultado",
+        emptyText:
+          "Primero haz el quiz para que podamos preparar tu recomendación de vela.",
+        startQuiz: "Empezar el quiz",
+        eyebrow: "Tu perfil aromático personalizado",
+        title:
+          "{{name}}, esta es la dirección de vela que mejor encaja contigo",
+        subtitle:
+          "Según tus respuestas, este perfil aromático es el que probablemente se sentirá más natural, bonito y adecuado para tu espacio.",
+        badge: "Ambiente recomendado",
+        summary: "Resumen de tu quiz",
+        mood: "Estado de ánimo",
+        space: "Espacio",
+        intensity: "Intensidad",
+        notes: "Notas",
+        season: "Temporada",
+        occasion: "Ocasión",
+        defaultNotes: "Notas seleccionadas",
+        retakeQuiz: "Repetir quiz",
+        shopMatchingCandles: "Ver velas recomendadas",
       },
     },
   },
@@ -1144,7 +1402,8 @@ const resources = {
         occasion: "Occasion",
         takeQuiz: "Faire le quiz",
         browseCatalog: "Parcourir le catalogue",
-        aiHint: "Nous utilisons votre profil pour orienter la recommandation parfumée.",
+        aiHint:
+          "Nous utilisons votre profil pour orienter la recommandation parfumée.",
       },
 
       catalog: {
@@ -1206,12 +1465,264 @@ const resources = {
         gridLabel: "Galerie des avis",
         reviewImageAlt: "Capture d'avis client",
       },
+      login: {
+        pageLabel: "Page de connexion",
+        title: "Se connecter",
+        subtitle:
+          "Connectez-vous pour continuer vos achats et gérer vos commandes.",
+        email: "Email",
+        password: "Mot de passe",
+        register: "Créer un compte",
+        loggingIn: "Connexion...",
+        errors: {
+          network: "Erreur réseau. Veuillez réessayer.",
+          invalidCredentials: "Email ou mot de passe invalide.",
+          generic: "Une erreur est survenue. Veuillez réessayer.",
+          loginFailed: "Échec de la connexion. Veuillez réessayer.",
+          emailRequired: "L'email est obligatoire.",
+          emailInvalid: "Saisissez une adresse email valide.",
+          passwordRequired: "Le mot de passe est obligatoire.",
+        },
+      },
+
+      register: {
+        pageLabel: "Page d'inscription",
+        title: "Créer un compte",
+        subtitle:
+          "Créez votre compte pour enregistrer vos informations et passer commande plus rapidement.",
+        firstName: "Prénom",
+        lastName: "Nom",
+        phone: "Numéro de téléphone",
+        email: "Email",
+        password: "Mot de passe",
+        register: "Créer un compte",
+        logIn: "Se connecter",
+        creating: "Création du compte...",
+        errors: {
+          network: "Erreur réseau. Veuillez réessayer.",
+          invalidForm: "Vérifiez vos informations et réessayez.",
+          failed: "Impossible de créer votre compte.",
+          loginAfterRegisterFailed:
+            "Le compte a été créé, mais la connexion automatique a échoué. Connectez-vous manuellement.",
+          firstNameRequired: "Le prénom est obligatoire.",
+          lastNameRequired: "Le nom est obligatoire.",
+          phoneRequired: "Le numéro de téléphone est obligatoire.",
+          phoneInvalid: "Saisissez un numéro de téléphone valide.",
+          emailRequired: "L'email est obligatoire.",
+          emailInvalid: "Saisissez une adresse email valide.",
+          passwordRequired: "Le mot de passe est obligatoire.",
+          passwordMin: "Le mot de passe doit contenir au moins 8 caractères.",
+        },
+      },
+
+      contacts: {
+        pageLabel: "Page de contact",
+        title: "Contacts",
+        subtitleLine1:
+          "Nous sommes heureux de vous aider pour les commandes, la livraison et les questions produit.",
+        subtitleLine2: "L'email est le meilleur moyen de nous contacter.",
+        supportEmail: "Email du support",
+        responseTime:
+          "Nous répondons généralement le plus rapidement possible pendant les heures ouvrées.",
+        madeWithCare: "Fait avec soin",
+        careText1:
+          "Chaque bougie est préparée avec attention aux détails, à l'emballage et à la présentation.",
+        careText2:
+          "Pour une demande spéciale, une question cadeau ou un problème de commande, contactez-nous par email.",
+      },
+
+      support: {
+        pageLabel: "Page de support",
+        title: "Support",
+        subtitle:
+          "Nous sommes là pour aider avec les commandes, les questions de livraison et les détails produit.",
+        emailLabel: "Support par email",
+        emailNote:
+          "Le moyen le plus rapide de nous contacter est l'email. Indiquez votre numéro de commande si votre question concerne un achat existant.",
+        responseTitle: "Temps de réponse",
+        responseText:
+          "Nous faisons de notre mieux pour répondre rapidement. Le délai peut varier pendant les périodes chargées, les week-ends ou les jours fériés.",
+        helpTitle: "Nous pouvons aider avec",
+        helpItem1: "Le statut de commande et les questions de livraison",
+        helpItem2: "Les détails produit et l'entretien des bougies",
+        helpItem3: "Les questions liées aux cadeaux",
+        helpItem4: "Les problèmes de commandes endommagées ou incorrectes",
+      },
+
+      storyMission: {
+        pageLabel: "Page histoire et mission",
+        title: "Histoire et mission",
+        subtitle:
+          "Un regard plus proche sur la marque, le processus et l'émotion derrière chaque bougie.",
+        quickNavigation: "Navigation rapide",
+        story: "Histoire",
+        mission: "Mission",
+        shop: "Boutique",
+        illustratedStory: "Histoire illustrée",
+        highlights: "Points forts",
+        storyCallout:
+          "Nous créons des bougies intentionnelles, élégantes et personnelles, pensées pour apporter chaleur et beauté aux espaces du quotidien.",
+        missionCallout:
+          "Notre mission est de rendre le parfum d'intérieur plus raffiné, accessible et soigneusement fabriqué.",
+      },
+
+      gallery: {
+        pageLabel: "Page galerie",
+        title: "Galerie",
+        subtitle:
+          "Un espace organisé pour les visuels de marque, le travail des bougies et les moments vidéo de KFursenko Candles.",
+        loading: "Chargement de la galerie...",
+        loadError: "Impossible de charger la galerie.",
+        empty: "La galerie est vide pour le moment.",
+        gridLabel: "Éléments de galerie",
+      },
+
+      checkout: {
+        pageLabel: "Page de paiement",
+        title: "Passer votre commande",
+        backToCart: "Retour au panier",
+        orderSummary: "Résumé de commande",
+        subtotal: "Sous-total",
+        shipping: "Livraison",
+        tax: "Taxe",
+        total: "Total",
+        fullName: "Nom complet",
+        streetAddress: "Adresse",
+        apartment: "Appartement / Unité",
+        city: "Ville",
+        state: "État",
+        zipCode: "Code postal",
+        country: "Pays",
+        continueToPayment: "Continuer vers le paiement",
+        preparingPayment: "Préparation du paiement...",
+        payNow: "Payer maintenant",
+        processing: "Traitement...",
+        paymentReady: "Paiement prêt",
+        createOrderError:
+          "Impossible de préparer le paiement. Veuillez réessayer.",
+      },
+
+      orders: {
+        pageLabel: "Page des commandes",
+        title: "Commandes",
+        subtitle: "Vos achats récents et détails de commande.",
+        ordersMeta: "Informations des commandes",
+        loading: "Chargement de vos commandes...",
+        retry: "Réessayer",
+        noOrders: "Aucune commande pour le moment",
+        noOrdersText:
+          "Lorsque vous passerez une commande, elle apparaîtra ici.",
+        browseCandles: "Voir les bougies",
+        goToProfile: "Aller au profil",
+        order: "Commande",
+        items: "Articles",
+        shippingAccount: "Livraison et compte",
+        needHelp: "Besoin d'aide ?",
+      },
+
+      profile: {
+        pageLabel: "Page profil",
+        title: "Profil",
+        subtitle: "Gérez votre compte et vos informations de livraison.",
+        account: "Compte",
+        shippingAddress: "Adresse de livraison",
+        firstName: "Prénom",
+        lastName: "Nom",
+        email: "Email",
+        streetAddress: "Adresse",
+        apartment: "Appartement / Unité",
+        city: "Ville",
+        state: "État",
+        zipCode: "Code postal",
+        country: "Pays",
+        saveChanges: "Enregistrer les modifications",
+        saving: "Enregistrement...",
+        changePassword: "Changer le mot de passe",
+        deleteAccount: "Supprimer le compte",
+        profileUpdated: "Profil mis à jour.",
+        profileUpdateFailed: "Impossible de mettre à jour le profil.",
+        deleteTitle: "Supprimer le compte ?",
+        deleteText:
+          "Cette action supprimera définitivement votre compte et vos données de profil.",
+        deleteConfirm: "Oui, supprimer",
+        deleting: "Suppression...",
+        deleteCancel: "Annuler",
+      },
+
+      paymentSuccess: {
+        pageLabel: "Page de paiement réussi",
+        title: "Paiement réussi",
+        subtitle: "Merci. Votre commande a été confirmée.",
+        backToCatalog: "Retour au catalogue",
+      },
+
+      paymentCancel: {
+        pageLabel: "Page de paiement annulé",
+        title: "Paiement annulé",
+        subtitle: "Aucun souci — vous pouvez revenir au paiement et réessayer.",
+        backToCheckout: "Retour au paiement",
+      },
+
+      recommendationQuiz: {
+        pageLabel: "Page du quiz de parfum",
+        title: "Trouvez l'ambiance de votre bougie",
+        subtitle:
+          "Répondez à quelques questions rapides et découvrez le style de bougie qui correspond à votre espace, votre humeur et votre moment.",
+        progress: "Progression du quiz",
+        yourName: "Votre nom",
+        personalize: "Nous personnaliserons votre résultat.",
+        name: "Nom",
+        namePlaceholder: "par exemple, Kseniia",
+        nameRequired: "Veuillez saisir votre nom pour continuer.",
+        chooseMood: "Choisissez votre ambiance",
+        moodHelp: "L'ambiance façonne la sensation générale du parfum.",
+        chooseSpace: "Où l'utiliserez-vous ?",
+        spaceHelp:
+          "Votre espace nous aide à choisir la bonne direction olfactive.",
+        pickNotes: "Choisissez 1 à 3 notes",
+        notesHelp: "Ces notes influencent le plus votre profil olfactif.",
+        selectedCount: "Sélectionnées : {{count}} / 3",
+        notesRequired: "Sélectionnez au moins 1 note.",
+        intensity: "Intensité",
+        intensityHelp: "Choisissez à quel point vous voulez sentir le parfum.",
+        seasonOccasion: "Saison + occasion",
+        seasonOccasionHelp: "Ces détails affinent votre recommandation finale.",
+        season: "Saison",
+        occasion: "Occasion",
+        generateResult: "Voir ma recommandation",
+      },
+
+      recommendationResult: {
+        pageLabel: "Page du résultat de recommandation",
+        emptyTitle: "Aucun résultat pour le moment",
+        emptyText:
+          "Veuillez d'abord faire le quiz afin que nous puissions préparer votre recommandation de bougie.",
+        startQuiz: "Commencer le quiz",
+        eyebrow: "Votre profil olfactif personnalisé",
+        title:
+          "{{name}}, voici la direction de bougie qui vous convient le mieux",
+        subtitle:
+          "D'après vos réponses, ce profil olfactif est celui qui devrait sembler le plus naturel, beau et adapté à votre espace.",
+        badge: "Ambiance recommandée",
+        summary: "Résumé de votre quiz",
+        mood: "Ambiance",
+        space: "Espace",
+        intensity: "Intensité",
+        notes: "Notes",
+        season: "Saison",
+        occasion: "Occasion",
+        defaultNotes: "Notes sélectionnées",
+        retakeQuiz: "Refaire le quiz",
+        shopMatchingCandles: "Voir les bougies recommandées",
+      },
     },
   },
 };
 
 const savedLanguage =
-  typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
+  typeof window !== "undefined"
+    ? window.localStorage.getItem(STORAGE_KEY)
+    : null;
 
 const browserLanguage =
   typeof navigator !== "undefined" ? navigator.language.split("-")[0] : "en";
@@ -1246,4 +1757,4 @@ if (typeof document !== "undefined") {
   document.documentElement.lang = initialLanguage;
 }
 
-export default i18n; 
+export default i18n;

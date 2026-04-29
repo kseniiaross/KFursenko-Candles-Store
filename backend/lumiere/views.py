@@ -11,7 +11,7 @@ from .services import search_candles, get_candle_by_slug, build_store_context, c
 logger = logging.getLogger(__name__)
 
 _CATALOG_URL_RE = re.compile(
-    r"(?:https?://(?:www\.)?kfcandle\.com)?/catalog/([a-z0-9]+(?:-[a-z0-9]+)*)",
+    r"(?:https?://(?:www\.)?kfcandle\.com)?/catalog/(?:item/)?([a-z0-9]+(?:-[a-z0-9]+)*)",
     re.IGNORECASE,
 )
 
