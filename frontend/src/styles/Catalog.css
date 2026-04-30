@@ -2,7 +2,7 @@
   --catalog-max-width: 1360px;
   --catalog-side-padding: 24px;
   --catalog-grid-gap-x: 20px;
-  --catalog-grid-gap-y: 24px;
+  --catalog-grid-gap-y: 18px;
   --catalog-clear-width: 104px;
 }
 
@@ -37,7 +37,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .catalog__headingGroup {
@@ -236,7 +236,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
   align-items: start;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 /* ======================================================
@@ -246,7 +246,7 @@
 .catalogCard {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -259,7 +259,7 @@
 .catalogCard__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 2 / 1;
   overflow: hidden;
   background: #f5f3ef;
 }
@@ -309,7 +309,7 @@
 .catalogCard__body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .catalogCard__metaRow {
@@ -325,19 +325,19 @@
   margin: 0;
   min-width: 0;
   font-family: "Times New Roman", Times, serif;
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .catalogCard__price {
   flex-shrink: 0;
-  padding-top: 1px;
-  font-size: 0.9rem;
+  padding-top: 0;
+  font-size: 0.86rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .catalogCard__actions {
@@ -347,12 +347,12 @@
 
 .catalogCard__btn {
   width: 100%;
-  min-height: 34px;
+  min-height: 28px;
   border: 1px solid var(--app-border);
   background: var(--app-surface);
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -395,8 +395,26 @@
     max-width: 1280px;
   }
 
+  .catalog__grid {
+    gap: 18px 20px;
+  }
+
   .catalogCard__media {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 2 / 1;
+  }
+}
+
+/* ======================================================
+   DESKTOP
+   ====================================================== */
+
+@media (max-width: 1399px) {
+  .catalog__inner {
+    max-width: 1220px;
+  }
+
+  .catalogCard__media {
+    aspect-ratio: 1.9 / 1;
   }
 }
 
@@ -408,7 +426,7 @@
   :root {
     --catalog-side-padding: 22px;
     --catalog-grid-gap-x: 16px;
-    --catalog-grid-gap-y: 20px;
+    --catalog-grid-gap-y: 18px;
   }
 
   .catalog {
@@ -436,6 +454,10 @@
     font-size: 1rem;
   }
 
+  .catalogCard__media {
+    aspect-ratio: 1.85 / 1;
+  }
+
   .catalogCard__name {
     font-size: 0.86rem;
   }
@@ -445,7 +467,7 @@
   }
 
   .catalogCard__btn {
-    min-height: 32px;
+    min-height: 28px;
     font-size: 0.64rem;
   }
 }
@@ -462,19 +484,19 @@
 
   .catalog__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: 18px;
+    margin-top: 16px;
   }
 
   .catalogCard {
-    gap: 5px;
+    gap: 4px;
   }
 
   .catalogCard__body {
-    gap: 5px;
+    gap: 4px;
   }
 
   .catalogCard__btn {
-    min-height: 30px;
+    min-height: 28px;
   }
 }
 
