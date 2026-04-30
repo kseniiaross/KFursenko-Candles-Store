@@ -1,4 +1,5 @@
 import logging
+import re
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
@@ -92,14 +93,9 @@ def _serialize_candle(candle: Candle) -> Dict[str, Any]:
     }
 
 
-def get_candle_by_slug(slug: str) -> Optional[Dict[str, Any]]:
-    slug = (slug or "").strip()
-    if not slug:
-        return None
-
-    candle = (
-        Candle.objects.filter(slug=slug)
-        .select_related("category")
+def _base_candle_queryset():
+    return (
+        Candle.objects.select_related("category")
         .prefetch_related(
             Prefetch(
                 "variants",
@@ -107,8 +103,23 @@ def get_candle_by_slug(slug: str) -> Optional[Dict[str, Any]]:
                 to_attr="prefetched_active_variants",
             )
         )
-        .first()
     )
+
+
+def get_candle_by_slug(slug: str) -> Optional[Dict[str, Any]]:
+    clean_slug = (slug or "").strip().lower()
+    if not clean_slug:
+        return None
+
+    candle = _base_candle_queryset().filter(slug__iexact=clean_slug).first()
+
+    if not candle:
+        slug_as_name = clean_slug.replace("-", " ")
+        candle = (
+            _base_candle_queryset()
+            .filter(Q(name__iexact=slug_as_name) | Q(name__icontains=slug_as_name))
+            .first()
+        )
 
     if not candle:
         return None
@@ -121,22 +132,48 @@ def search_candles(query: str, limit: int = 6) -> List[Dict[str, Any]]:
     if not q:
         return []
 
+    normalized_query = q.lower()
+    cleaned_query = re.sub(r"https?://\S+", " ", normalized_query)
+    cleaned_query = cleaned_query.replace("/catalog/item/", " ")
+    cleaned_query = cleaned_query.replace("/catalog/", " ")
+    cleaned_query = re.sub(r"[^a-z0-9\s\-_]+", " ", cleaned_query)
+
+    parts = [part for part in re.split(r"[\s\-_\/]+", cleaned_query) if len(part) >= 2]
+    phrase = " ".join(parts)
+
+    search_filter = (
+        Q(name__icontains=q)
+        | Q(slug__icontains=q)
+        | Q(short_description__icontains=q)
+        | Q(description__icontains=q)
+        | Q(fragrance_family__icontains=q)
+        | Q(intensity__icontains=q)
+    )
+
+    if phrase:
+        search_filter |= (
+            Q(name__icontains=phrase)
+            | Q(slug__icontains=phrase.replace(" ", "-"))
+            | Q(short_description__icontains=phrase)
+            | Q(description__icontains=phrase)
+            | Q(fragrance_family__icontains=phrase)
+            | Q(intensity__icontains=phrase)
+        )
+
+    for part in parts:
+        search_filter |= (
+            Q(name__icontains=part)
+            | Q(slug__icontains=part)
+            | Q(short_description__icontains=part)
+            | Q(description__icontains=part)
+            | Q(fragrance_family__icontains=part)
+            | Q(intensity__icontains=part)
+        )
+
     qs = (
-        Candle.objects.filter(
-            Q(name__icontains=q)
-            | Q(short_description__icontains=q)
-            | Q(description__icontains=q)
-            | Q(fragrance_family__icontains=q)
-            | Q(intensity__icontains=q)
-        )
-        .select_related("category")
-        .prefetch_related(
-            Prefetch(
-                "variants",
-                queryset=CandleVariant.objects.filter(is_active=True).order_by("price", "id"),
-                to_attr="prefetched_active_variants",
-            )
-        )
+        _base_candle_queryset()
+        .filter(search_filter)
+        .distinct()
         .order_by("-created_at")[:limit]
     )
 
@@ -145,7 +182,7 @@ def search_candles(query: str, limit: int = 6) -> List[Dict[str, Any]]:
 
 def build_store_context(suggestions: List[Dict[str, Any]]) -> str:
     if not suggestions:
-        return "CATALOG SEARCH: No matching products found for this query."
+        return "CATALOG SEARCH RESULTS: No matching products were returned by the backend."
 
     lines = ["CATALOG SEARCH RESULTS (use these and only these to recommend):"]
 
@@ -163,6 +200,9 @@ def build_store_context(suggestions: List[Dict[str, Any]]) -> str:
 
         if suggestion.get("short_description"):
             lines.append(f"  Short description: {suggestion['short_description']}")
+
+        if suggestion.get("description"):
+            lines.append(f"  Description: {suggestion['description']}")
 
         if suggestion.get("fragrance_family"):
             lines.append(f"  Fragrance family: {suggestion['fragrance_family']}")
@@ -229,30 +269,37 @@ You know deeply about:
 - Seasonal and home styling with candles
 
 ═══ HOW TO RECOMMEND ═══
-- Use the provided product data, including notes, mood, best-for tags, ideal spaces, and fragrance family.
-- Prefer recommendations that match the customer's requested mood, scent type, or room.
+- If the customer sends a catalog product URL and CATALOG SEARCH RESULTS contains exactly one product, explain that exact product first.
+- Do NOT say the product is missing if it appears in CATALOG SEARCH RESULTS.
+- Do NOT ask a clarifying question before describing the exact linked product.
+- Use the provided product data, including description, notes, mood, best-for tags, ideal spaces, and fragrance family.
 - If the customer asks for something like "calming", "fresh", "spa-like", "not sweet", or "for a bathroom", use the structured product fields to match the best item.
 - If multiple candles fit, recommend the 1-2 strongest matches.
 - If nothing fits well, say so honestly and ask one clarifying question.
 
 ═══ YOUR SALES APPROACH ═══
-1. DIAGNOSE before recommending. Ask 1 targeted question to understand:
-   - The occasion (gift vs. self-use? celebration, relaxation, daily ambiance?)
-   - Scent preference (light/fresh vs. rich/warm? any dislikes or allergies?)
-   - Context (living room, bedroom, bathroom, office? day or evening use?)
+1. If the customer asks about a specific candle, describe that candle directly:
+   - summarize the scent profile
+   - explain the mood / room / occasion it fits
+   - mention stock status and price if provided
 
-2. PAINT A PICTURE when recommending. Don't just say "this candle is nice."
+2. DIAGNOSE only when the customer asks for a recommendation without naming or linking a specific candle. Ask 1 targeted question to understand:
+   - The occasion
+   - Scent preference
+   - Context
+
+3. PAINT A PICTURE when recommending. Don't just say "this candle is nice."
    Say: "This one opens with bergamot, then settles into warm sandalwood — perfect for winding down after a long day."
 
-3. GUIDE NATURALLY toward purchase:
-   - Mention stock scarcity when relevant ("This one sells out fast")
+4. GUIDE NATURALLY toward purchase:
+   - Mention stock status when relevant
    - Suggest complementary products when appropriate
    - If something is out of stock, pivot to the best available alternative
 
-4. REMEMBER the conversation. Build on what the customer already told you.
+5. REMEMBER the conversation. Build on what the customer already told you.
    Don't ask again what you've already learned.
 
-5. HANDLE objections warmly:
+6. HANDLE objections warmly:
    - "Too expensive" → focus on burn hours / cost per hour, gifting value
    - "Not sure" → ask one more question to narrow it down
    - "Just browsing" → invite them to share what mood they're in
