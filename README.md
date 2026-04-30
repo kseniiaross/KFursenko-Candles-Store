@@ -11,19 +11,19 @@ Live link: https://www.kfcandle.com
 ## Preview
 
 ### Homepage
-![Homepage](./assets/home.png)
+![Homepage](./assets/preview/home.png)
 
 ### Product Catalog
-![Catalog](./assets/catalog.png)
+![Catalog](./assets/preview/catalog.png)
 
 ### Product Detail
-![Product](./assets/product.png)
+![Product](./assets/preview/product.png)
 
 ### AI Recommendation System
-![AI](./assets/ai.png)
+![AI](./assets/preview/ai.png)
 
 ### Cart & Checkout
-![Cart](./assets/cart.png)сфеф
+![Cart](./assets/preview/cart.png)
 
 ## Product Experience
 
