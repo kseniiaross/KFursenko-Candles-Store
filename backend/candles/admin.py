@@ -149,8 +149,21 @@ class CandleAdmin(admin.ModelAdmin):
     )
     search_fields = (
         "name",
+        "name_en",
+        "name_ru",
+        "name_es",
+        "name_fr",
         "slug",
+        "short_description",
+        "short_description_en",
+        "short_description_ru",
+        "short_description_es",
+        "short_description_fr",
         "description",
+        "description_en",
+        "description_ru",
+        "description_es",
+        "description_fr",
         "collections__name",
         "offers__title",
         "variants__size",
@@ -163,10 +176,92 @@ class CandleAdmin(admin.ModelAdmin):
     inlines = [CandleVariantInline, CandleImageInline]
 
     fieldsets = (
-        (None, {"fields": ("category", "name", "slug")}),
+        (
+            "Main content",
+            {
+                "fields": (
+                    "category",
+                    "name",
+                    "slug",
+                    "short_description",
+                    "description",
+                    "image",
+                )
+            },
+        ),
+        (
+            "English content",
+            {
+                "fields": (
+                    "name_en",
+                    "short_description_en",
+                    "description_en",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Russian content",
+            {
+                "fields": (
+                    "name_ru",
+                    "short_description_ru",
+                    "description_ru",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Spanish content",
+            {
+                "fields": (
+                    "name_es",
+                    "short_description_es",
+                    "description_es",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "French content",
+            {
+                "fields": (
+                    "name_fr",
+                    "short_description_fr",
+                    "description_fr",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
         ("Collections", {"fields": ("collections",)}),
         ("Offers (badges)", {"fields": ("offers",)}),
-        ("Details", {"fields": ("description", "image")}),
+        (
+            "Scent profile",
+            {
+                "fields": (
+                    "fragrance_family",
+                    "intensity",
+                    "top_notes",
+                    "heart_notes",
+                    "base_notes",
+                    "mood_tags",
+                    "use_case_tags",
+                    "ideal_spaces",
+                    "season_tags",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Legacy pricing",
+            {
+                "fields": (
+                    "price",
+                    "stock_qty",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
         (
             "Status",
             {
@@ -183,6 +278,7 @@ class CandleAdmin(admin.ModelAdmin):
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name in ("collections", "offers"):
             kwargs["widget"] = forms.CheckboxSelectMultiple
+
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
