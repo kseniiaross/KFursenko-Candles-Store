@@ -19,10 +19,11 @@ export function useHydrateCart(): void {
       const token = getAccessToken();
       const guestItems = getGuestCartStorage();
 
-      if (!token && !isLoggedIn) {
-        if (!cancelled && guestItems.length > 0) {
+      if (!isLoggedIn || !token) {
+        if (!cancelled) {
           dispatch(setCart(guestItems));
         }
+
         return;
       }
 
@@ -47,7 +48,7 @@ export function useHydrateCart(): void {
       } catch (error) {
         console.error("Failed to hydrate cart:", error);
 
-        if (!cancelled && guestItems.length > 0) {
+        if (!cancelled) {
           dispatch(setCart(guestItems));
         }
       }
