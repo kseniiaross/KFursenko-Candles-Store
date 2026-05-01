@@ -14,22 +14,38 @@ import {
   toggle,
 } from "../store/lumiereSlice";
 
-import type { Locale, LumiereHistoryMessage, LumiereMessage } from "../types/lumiere";
+import type {
+  Locale,
+  LumiereHistoryMessage,
+  LumiereMessage,
+} from "../types/lumiere";
 
 import "../styles/LumiereWidget.css";
+
+function stopSpeaking(): void {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+}
 
 function speakText(text: string, locale: Locale): void {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
+  const cleanText = text.trim();
+  if (!cleanText) return;
+
   const synth = window.speechSynthesis;
   synth.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(cleanText);
 
   if (locale === "ru") utterance.lang = "ru-RU";
   else if (locale === "es") utterance.lang = "es-ES";
   else if (locale === "fr") utterance.lang = "fr-FR";
   else utterance.lang = "en-US";
+
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  utterance.volume = 1;
 
   synth.speak(utterance);
 }
@@ -55,6 +71,16 @@ function buildHistory(messages: LumiereMessage[]): LumiereHistoryMessage[] {
     role: message.role,
     text: message.text,
   }));
+}
+
+function getLastAssistantMessage(messages: LumiereMessage[]): LumiereMessage | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === "assistant") {
+      return messages[index];
+    }
+  }
+
+  return null;
 }
 
 const LumiereWidget: React.FC = () => {
@@ -94,7 +120,8 @@ const LumiereWidget: React.FC = () => {
         close: "Закрыть ассистента Lumière",
         subtitle: "Ваш помощник по свечам",
         language: "Язык",
-        speech: "Озвучивание ответов",
+        speechOn: "Включить озвучивание ответов",
+        speechOff: "Выключить озвучивание ответов",
         messages: "Сообщения чата",
         input: "Введите сообщение",
         placeholder: "Спроси про аромат, доставку, уход…",
@@ -114,7 +141,8 @@ const LumiereWidget: React.FC = () => {
         close: "Cerrar asistente Lumière",
         subtitle: "Tu asistente de velas",
         language: "Idioma",
-        speech: "Leer respuestas en voz alta",
+        speechOn: "Activar lectura en voz alta",
+        speechOff: "Desactivar lectura en voz alta",
         messages: "Mensajes del chat",
         input: "Escribe un mensaje",
         placeholder: "Pregunta sobre aroma, envío, cuidado…",
@@ -134,7 +162,8 @@ const LumiereWidget: React.FC = () => {
         close: "Fermer l’assistant Lumière",
         subtitle: "Votre assistante bougies",
         language: "Langue",
-        speech: "Lire les réponses à voix haute",
+        speechOn: "Activer la lecture vocale",
+        speechOff: "Désactiver la lecture vocale",
         messages: "Messages du chat",
         input: "Saisir un message",
         placeholder: "Demandez un parfum, la livraison, l’entretien…",
@@ -153,7 +182,8 @@ const LumiereWidget: React.FC = () => {
       close: "Close Lumière assistant",
       subtitle: "Your candle assistant",
       language: "Language",
-      speech: "Read responses aloud",
+      speechOn: "Turn on voice playback",
+      speechOff: "Turn off voice playback",
       messages: "Chat messages",
       input: "Enter message",
       placeholder: "Ask about scent, shipping, care…",
@@ -190,6 +220,7 @@ const LumiereWidget: React.FC = () => {
   useEffect(() => {
     if (isOpen) return;
     openButtonRef.current?.focus();
+    stopSpeaking();
   }, [isOpen]);
 
   useEffect(() => {
@@ -197,6 +228,7 @@ const LumiereWidget: React.FC = () => {
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
+        stopSpeaking();
         dispatch(close());
       }
     };
@@ -246,7 +278,9 @@ const LumiereWidget: React.FC = () => {
     }
   };
 
-  const onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = async (event) => {
+  const onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = async (
+    event
+  ) => {
     if (event.key === "Enter") {
       event.preventDefault();
       await onSend();
@@ -254,10 +288,29 @@ const LumiereWidget: React.FC = () => {
   };
 
   const onLocaleChange = (value: Locale): void => {
+    stopSpeaking();
     dispatch(setLocale(value));
   };
 
+  const onSpeechToggle = (): void => {
+    const nextSpeakValue = !speak;
+
+    dispatch(setSpeak(nextSpeakValue));
+
+    if (!nextSpeakValue) {
+      stopSpeaking();
+      return;
+    }
+
+    const lastAssistantMessage = getLastAssistantMessage(messages);
+
+    if (lastAssistantMessage) {
+      speakText(lastAssistantMessage.text, locale);
+    }
+  };
+
   const onClearConversation = (): void => {
+    stopSpeaking();
     dispatch(clearConversation());
     setInput("");
   };
@@ -308,7 +361,9 @@ const LumiereWidget: React.FC = () => {
                   id={languageSelectId}
                   className="lumiereSelect"
                   value={locale}
-                  onChange={(event) => onLocaleChange(event.target.value as Locale)}
+                  onChange={(event) =>
+                    onLocaleChange(event.target.value as Locale)
+                  }
                   aria-label={localizedText.language}
                 >
                   <option value="en">EN</option>
@@ -318,16 +373,18 @@ const LumiereWidget: React.FC = () => {
                 </select>
               </div>
 
-              <label className="lumiereToggle" aria-label={localizedText.speech}>
-                <input
-                  type="checkbox"
-                  checked={speak}
-                  onChange={(event) => dispatch(setSpeak(event.target.checked))}
-                />
-                <span className="lumiereToggle__icon" aria-hidden="true">
-                  🔊
-                </span>
-              </label>
+              <button
+                type="button"
+                className={`lumiereVoiceButton ${
+                  speak ? "is-active" : ""
+                }`}
+                onClick={onSpeechToggle}
+                aria-label={speak ? localizedText.speechOff : localizedText.speechOn}
+                aria-pressed={speak}
+                title={speak ? localizedText.speechOff : localizedText.speechOn}
+              >
+                <span aria-hidden="true">🔊</span>
+              </button>
 
               <button
                 type="button"
@@ -340,7 +397,10 @@ const LumiereWidget: React.FC = () => {
               <button
                 type="button"
                 className="lumiereClose"
-                onClick={() => dispatch(close())}
+                onClick={() => {
+                  stopSpeaking();
+                  dispatch(close());
+                }}
                 aria-label={localizedText.close}
               >
                 ×
@@ -374,7 +434,7 @@ const LumiereWidget: React.FC = () => {
                       {message.suggestions.map((product) => (
                         <Link
                           key={product.id}
-                          to={`/catalog/${product.slug}`}
+                          to={`/catalog/item/${product.slug}`}
                           className="lumiereCard"
                           aria-label={localizedText.openProduct.replace(
                             "{{name}}",
@@ -382,9 +442,14 @@ const LumiereWidget: React.FC = () => {
                           )}
                         >
                           <div className="lumiereCard__top">
-                            <div className="lumiereCard__name">{product.name}</div>
+                            <div className="lumiereCard__name">
+                              {product.name}
+                            </div>
+
                             <div className="lumiereCard__price">
-                              {product.price ? `From $${product.price}` : "See product"}
+                              {product.price
+                                ? `From $${product.price}`
+                                : "See product"}
                             </div>
                           </div>
 
