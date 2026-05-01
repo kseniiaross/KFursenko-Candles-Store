@@ -14,16 +14,16 @@ Live link: https://www.kfcandle.com
 ![Homepage](assets/images/preview/homepage.jpg)
 
 ### Product Catalog
-![Catalog](assets/images/preview/catalog.jpg)
+![Catalog](frontend/src/assets/images/preview/catalog.jpg)
 
 ### Product Detail
-![Product](assets/images/preview/product.jpg)
+![Product](frontend/src/assets/images/preview/product.jpg)
 
 ### AI-powered assistant
-![AI](assets/images/preview/ai.jpg)
+![AI](frontend/src/assets/images/preview/ai.jpg)
 
 ### Cart & Checkout
-![Cart](assets/images/preview/cart.jpg)
+![Cart](frontend/src/assets/images/preview/cart.jpg)
 
 ## Product Experience
 
