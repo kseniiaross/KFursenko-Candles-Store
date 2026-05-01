@@ -11,10 +11,10 @@ Live link: https://www.kfcandle.com
 ## Preview
 
 ### Homepage
-![Homepage](./assets/images/preview/home.jpg)
+![Homepage](./assets/images/preview/homepage.jpg)
 
 ### Product Catalog
-![Catalog](./assets/preview/catalog.jpg)
+![Catalog](./assets/images/preview/catalog.jpg)
 
 ### Product Detail
 ![Product](./assets/images/preview/product.jpg)
