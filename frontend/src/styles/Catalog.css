@@ -253,10 +253,14 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .catalogCard__link {
   display: block;
+  min-width: 0;
+  max-width: 100%;
   color: inherit;
   text-decoration: none;
 }
@@ -323,39 +327,56 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .catalogCard__metaRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
   color: inherit;
   text-decoration: none;
+  overflow: hidden;
 }
 
 .catalogCard__name {
   margin: 0;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   font-family: "Times New Roman", Times, serif;
   font-size: 0.98rem;
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .catalogCard__price {
   flex-shrink: 0;
+  max-width: 82px;
+  overflow: hidden;
   padding-top: 1px;
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.05;
+  text-align: right;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .catalogCard__actions {
   display: flex;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .catalogCard__btn {
@@ -493,6 +514,7 @@
   }
 
   .catalogCard__price {
+    max-width: 78px;
     font-size: 0.86rem;
   }
 }
@@ -544,7 +566,7 @@
   }
 
   .catalog__filters {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px;
   }
 
@@ -562,7 +584,7 @@
   }
 
   .catalog__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 26px;
     margin-top: 24px;
   }
@@ -576,6 +598,7 @@
   }
 
   .catalogCard__price {
+    max-width: 76px;
     font-size: 0.98rem;
   }
 
@@ -600,6 +623,11 @@
 
   .catalogCard__name {
     font-size: 1rem;
+  }
+
+  .catalogCard__price {
+    max-width: 72px;
+    font-size: 0.92rem;
   }
 }
 
