@@ -290,34 +290,40 @@ class AboutGalleryItemAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
     fieldsets = (
-        (None, {"fields": ("title", "slug", "media_type")}),
-        ("Media", {"fields": ("media", "preview_image")}),
-        ("Text", {"fields": ("caption",)}),
-        ("Display", {"fields": ("sort_order", "is_active")}),
-        ("Timestamps", {"fields": ("created_at",), "classes": ("collapse",)}),
-    )
-
-
-@admin.register(AboutReviewItem)
-class AboutReviewItemAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "title",
-        "customer_name",
-        "sort_order",
-        "is_active",
-        "created_at",
-    )
-    list_filter = ("is_active", "created_at")
-    search_fields = ("title", "customer_name", "caption")
-    ordering = ("sort_order", "-created_at", "id")
-    list_editable = ("sort_order", "is_active")
-    readonly_fields = ("created_at",)
-
-    fieldsets = (
-        (None, {"fields": ("title", "customer_name")}),
-        ("Review media", {"fields": ("image",)}),
-        ("Text", {"fields": ("caption",)}),
-        ("Display", {"fields": ("sort_order", "is_active")}),
-        ("Timestamps", {"fields": ("created_at",), "classes": ("collapse",)}),
+        (
+            "Gallery card text",
+            {
+                "fields": (
+                    "title",
+                    "slug",
+                    "caption",
+                ),
+            },
+        ),
+        (
+            "Media upload",
+            {
+                "fields": (
+                    "media_type",
+                    "media",
+                    "preview_image",
+                ),
+            },
+        ),
+        (
+            "Display settings",
+            {
+                "fields": (
+                    "sort_order",
+                    "is_active",
+                ),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
     )
