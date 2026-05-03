@@ -50,6 +50,8 @@ const Gallery: React.FC = () => {
     >
       <section className="galleryPage__hero">
         <div className="galleryPage__container">
+          <p className="galleryPage__eyebrow">Behind the flame</p>
+
           <h1 id={sectionTitleId} className="galleryPage__title">
             {t("gallery.title")}
           </h1>
@@ -80,14 +82,15 @@ const Gallery: React.FC = () => {
 
           {!loading && !error && items.length > 0 ? (
             <div className="galleryGrid" role="list" aria-label={t("gallery.gridLabel")}>
-              {items.map((item) => {
+              {items.map((item, index) => {
                 const cardTitleId = `gallery-card-title-${item.id}`;
                 const cardCaptionId = `gallery-card-caption-${item.id}`;
+                const isFeatured = index === 0;
 
                 return (
                   <article
                     key={item.id}
-                    className="galleryCard"
+                    className={`galleryCard ${isFeatured ? "galleryCard--featured" : ""}`}
                     role="listitem"
                     aria-labelledby={cardTitleId}
                     aria-describedby={item.caption ? cardCaptionId : undefined}
@@ -99,9 +102,9 @@ const Gallery: React.FC = () => {
                           controls
                           preload="metadata"
                           playsInline
+                          muted
                           poster={item.preview_image ?? undefined}
                         >
-                          {/* Explicit MIME type helps browser media parsing */}
                           <source src={item.media} type="video/mp4" />
                           {t("gallery.videoNotSupported")}
                         </video>
@@ -111,11 +114,16 @@ const Gallery: React.FC = () => {
                           src={item.media}
                           alt={item.title}
                           loading="lazy"
+                          decoding="async"
                         />
                       )}
                     </div>
 
                     <div className="galleryCard__body">
+                      <p className="galleryCard__kicker">
+                        {item.media_type === "video" ? "Video story" : "Brand moment"}
+                      </p>
+
                       <h2 id={cardTitleId} className="galleryCard__title">
                         {item.title}
                       </h2>
