@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   width: 100%;
   min-height: 100%;
@@ -29,9 +35,10 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  width: 100%;
   isolation: isolate;
   color: var(--app-text);
   overflow: visible;
