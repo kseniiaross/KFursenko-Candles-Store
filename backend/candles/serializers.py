@@ -14,20 +14,43 @@ from .models import (
     AboutReviewItem,
 )
 
+
 SUPPORTED_LOCALES = {"en", "ru", "es", "fr"}
 
 
+# ======================================================
+# IMAGE OPTIMIZATION (Cloudinary)
+# ======================================================
+def build_cloudinary_image_url(image, width=900, height=600):
+    if not image:
+        return None
+
+    try:
+        return image.build_url(
+            secure=True,
+            fetch_format="auto",
+            quality="auto",
+            width=width,
+            height=height,
+            crop="fill",
+            gravity="auto",
+        )
+    except Exception:
+        return str(image)
+
+
+# ======================================================
+# LOCALE HELPERS
+# ======================================================
 def get_locale_from_request(request):
     if not request:
         return "en"
 
     query_locale = (request.query_params.get("lang") or "").lower().strip()
-
     if query_locale in SUPPORTED_LOCALES:
         return query_locale
 
     header = (request.headers.get("Accept-Language") or "").lower().strip()
-
     for locale in SUPPORTED_LOCALES:
         if header.startswith(locale):
             return locale
@@ -38,10 +61,12 @@ def get_locale_from_request(request):
 def localized_value(obj, field_name, locale):
     translated = getattr(obj, f"{field_name}_{locale}", "") or ""
     fallback = getattr(obj, field_name, "") or ""
-
     return translated.strip() or fallback
 
 
+# ======================================================
+# BASIC SERIALIZERS
+# ======================================================
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -56,7 +81,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = ["id", "name", "slug", "is_group", "parent", "children"]
 
-    def get_parent(self, obj: Collection):
+    def get_parent(self, obj):
         if not obj.parent_id:
             return None
 
@@ -66,11 +91,14 @@ class CollectionSerializer(serializers.ModelSerializer):
             "slug": obj.parent.slug,
         }
 
-    def get_children(self, obj: Collection):
+    def get_children(self, obj):
         qs = obj.children.all().order_by("name")
         return [{"id": c.id, "name": c.name, "slug": c.slug} for c in qs]
 
 
+# ======================================================
+# CANDLE MEDIA
+# ======================================================
 class CandleImageSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
@@ -79,13 +107,7 @@ class CandleImageSerializer(serializers.ModelSerializer):
         fields = ["id", "image", "sort_order"]
 
     def get_image(self, obj):
-        if not obj.image:
-            return None
-
-        try:
-            return obj.image.build_url(secure=True)
-        except Exception:
-            return str(obj.image)
+        return build_cloudinary_image_url(obj.image, width=1200, height=900)
 
 
 class CandleVariantSerializer(serializers.ModelSerializer):
@@ -100,6 +122,9 @@ class CandleBadgeSerializer(serializers.ModelSerializer):
         fields = ["slug", "badge_text", "kind", "discount_percent", "priority"]
 
 
+# ======================================================
+# MAIN CANDLE SERIALIZER
+# ======================================================
 class CandleSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
@@ -182,58 +207,42 @@ class CandleSerializer(serializers.ModelSerializer):
         ]
 
     def get_name(self, obj):
-        request = self.context.get("request")
-        locale = get_locale_from_request(request)
+        locale = get_locale_from_request(self.context.get("request"))
         return localized_value(obj, "name", locale)
 
     def get_description(self, obj):
-        request = self.context.get("request")
-        locale = get_locale_from_request(request)
+        locale = get_locale_from_request(self.context.get("request"))
         return localized_value(obj, "description", locale)
 
     def get_image(self, obj):
-        if not obj.image:
-            return None
+        return build_cloudinary_image_url(obj.image, width=900, height=600)
 
-        try:
-            return obj.image.build_url(secure=True)
-        except Exception:
-            return str(obj.image)
-
-    def get_badges(self, obj: Candle):
+    def get_badges(self, obj):
         request = self.context.get("request")
         user = getattr(request, "user", None)
 
-        is_authed = bool(user and user.is_authenticated)
-        is_new_shopper = False
-
-        if is_authed:
-            is_new_shopper = not Order.objects.filter(user=user).exists()
+        is_new_shopper = (
+            user and user.is_authenticated and not Order.objects.filter(user=user).exists()
+        )
 
         qs = Offer.objects.filter(is_active=True)
 
-        global_offers = qs.filter(apply_globally=True)
-        direct_m2m = obj.offers.filter(is_active=True)
-        direct_reverse = qs.filter(candles=obj)
-        by_category = qs.filter(categories=obj.category)
-        by_collections = qs.filter(collections__in=obj.collections.all())
-
         combined = (
-            global_offers
-            | direct_m2m
-            | direct_reverse
-            | by_category
-            | by_collections
+            qs.filter(apply_globally=True)
+            | obj.offers.filter(is_active=True)
+            | qs.filter(candles=obj)
+            | qs.filter(categories=obj.category)
+            | qs.filter(collections__in=obj.collections.all())
         ).distinct()
 
         if not is_new_shopper:
             combined = combined.exclude(new_shopper_only=True)
 
-        combined = combined.order_by("priority", "title")
+        return CandleBadgeSerializer(
+            combined.order_by("priority", "title"), many=True
+        ).data
 
-        return CandleBadgeSerializer(combined, many=True).data
-
-    def get_discount_price(self, obj: Candle):
+    def get_discount_price(self, obj):
         if obj.price is None:
             return None
 
@@ -244,18 +253,12 @@ class CandleSerializer(serializers.ModelSerializer):
 
         qs = Offer.objects.filter(is_active=True)
 
-        global_offers = qs.filter(apply_globally=True)
-        direct_m2m = obj.offers.filter(is_active=True)
-        direct_reverse = qs.filter(candles=obj)
-        by_category = qs.filter(categories=obj.category)
-        by_collections = qs.filter(collections__in=obj.collections.all())
-
         combined = (
-            global_offers
-            | direct_m2m
-            | direct_reverse
-            | by_category
-            | by_collections
+            qs.filter(apply_globally=True)
+            | obj.offers.filter(is_active=True)
+            | qs.filter(candles=obj)
+            | qs.filter(categories=obj.category)
+            | qs.filter(collections__in=obj.collections.all())
         ).distinct()
 
         for offer in combined:
@@ -277,16 +280,17 @@ class CandleSerializer(serializers.ModelSerializer):
     def validate_price(self, value):
         if value <= 0:
             raise serializers.ValidationError("Price must be greater than 0.")
-
         return value
 
     def validate_stock_qty(self, value):
         if value < 0:
             raise serializers.ValidationError("stock_qty cannot be negative.")
-
         return value
 
 
+# ======================================================
+# ABOUT / GALLERY
+# ======================================================
 class AboutGalleryItemSerializer(serializers.ModelSerializer):
     media = serializers.SerializerMethodField()
     preview_image = serializers.SerializerMethodField()
@@ -308,22 +312,10 @@ class AboutGalleryItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["slug", "created_at"]
 
     def get_media(self, obj):
-        if not obj.media:
-            return None
-
-        try:
-            return obj.media.build_url(secure=True)
-        except Exception:
-            return str(obj.media)
+        return build_cloudinary_image_url(obj.media, width=1200, height=800)
 
     def get_preview_image(self, obj):
-        if not obj.preview_image:
-            return None
-
-        try:
-            return obj.preview_image.build_url(secure=True)
-        except Exception:
-            return str(obj.preview_image)
+        return build_cloudinary_image_url(obj.preview_image, width=1200, height=800)
 
 
 class AboutReviewItemSerializer(serializers.ModelSerializer):
@@ -344,10 +336,4 @@ class AboutReviewItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at"]
 
     def get_image(self, obj):
-        if not obj.image:
-            return None
-
-        try:
-            return obj.image.build_url(secure=True)
-        except Exception:
-            return str(obj.image)
+        return build_cloudinary_image_url(obj.image, width=800, height=800)

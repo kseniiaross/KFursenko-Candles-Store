@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+
 import type { Candle, Category, CandleBadge } from "../types/candle";
 import { listCandles, listCategories } from "../api/candles";
 import { useAppDispatch } from "../store/hooks";
 import { openSizeModal } from "../store/modalSlice";
+
 import "../styles/Catalog.css";
 
 const ITEMS_PER_BATCH = 8;
@@ -41,7 +43,7 @@ const Catalog: React.FC = () => {
   useEffect(() => {
     let active = true;
 
-    (async () => {
+    async function loadCatalog(): Promise<void> {
       try {
         setLoading(true);
         setError("");
@@ -63,7 +65,6 @@ const Catalog: React.FC = () => {
         });
 
         if (!active) return;
-
         setCandles(candlesData);
       } catch {
         if (!active) return;
@@ -72,7 +73,9 @@ const Catalog: React.FC = () => {
         if (!active) return;
         setLoading(false);
       }
-    })();
+    }
+
+    void loadCatalog();
 
     return () => {
       active = false;
@@ -225,9 +228,7 @@ const Catalog: React.FC = () => {
         </header>
 
         <div className="catalog__status" aria-live="polite" aria-atomic="true">
-          {loading ? (
-            <p className="catalog__state">{t("catalog.loading")}</p>
-          ) : null}
+          {loading ? <p className="catalog__state">{t("catalog.loading")}</p> : null}
 
           {!loading && error ? (
             <p className="catalog__state catalog__state--error">{error}</p>
@@ -240,7 +241,7 @@ const Catalog: React.FC = () => {
               className="catalog__grid"
               aria-label={t("catalog.productListLabel")}
             >
-              {visibleCandles.map((product) => {
+              {visibleCandles.map((product, index) => {
                 const coverUrl = product.image ?? "";
                 if (!coverUrl) return null;
 
@@ -252,6 +253,8 @@ const Catalog: React.FC = () => {
                   product.variants && product.variants.length > 0
                     ? product.variants[0]
                     : null;
+
+                const isPriorityImage = index === 0;
 
                 return (
                   <article key={product.id} className="catalogCard">
@@ -265,7 +268,11 @@ const Catalog: React.FC = () => {
                           className="catalogCard__img"
                           src={coverUrl}
                           alt={product.name}
-                          loading="lazy"
+                          loading={isPriorityImage ? "eager" : "lazy"}
+                          fetchPriority={isPriorityImage ? "high" : "auto"}
+                          decoding="async"
+                          width={900}
+                          height={600}
                         />
 
                         {(showSoldOut || showBestseller || badges.length > 0) && (
