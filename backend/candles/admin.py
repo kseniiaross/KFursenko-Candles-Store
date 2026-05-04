@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django import forms
 
 from .models import (
     Category,
@@ -8,7 +7,7 @@ from .models import (
     CandleVariant,
     CandleImage,
     Offer,
-    GalleryItem, 
+    GalleryItem,
 )
 
 
@@ -42,32 +41,51 @@ class OfferAdmin(admin.ModelAdmin):
         "priority",
     )
     list_filter = ("is_active", "kind")
-    search_fields = ("title", "slug")
+    search_fields = ("title", "slug", "badge_text")
     ordering = ("priority", "title")
     prepopulated_fields = {"slug": ("title",)}
     filter_horizontal = ("categories", "collections", "candles")
 
 
+# =========================
+# INLINES
+# =========================
 class CandleVariantInline(admin.TabularInline):
     model = CandleVariant
     extra = 1
+    fields = ("size", "price", "stock_qty", "is_active")
+    ordering = ("id",)
 
 
 class CandleImageInline(admin.TabularInline):
     model = CandleImage
     extra = 0
     max_num = 5
+    fields = ("image", "sort_order")
+    ordering = ("sort_order", "id")
 
 
+# =========================
+# CANDLE
+# =========================
 @admin.register(Candle)
 class CandleAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "is_sold_out", "is_bestseller")
-    list_filter = ("category", "is_sold_out", "is_bestseller")
-    search_fields = ("name", "slug")
+    list_display = ("id", "name", "is_sold_out", "is_bestseller", "created_at")
+    list_filter = ("category", "is_sold_out", "is_bestseller", "created_at")
+    search_fields = ("name", "slug", "description")
     ordering = ("-created_at",)
     prepopulated_fields = {"slug": ("name",)}
+
+    # ❌ УБРАЛИ in_stock — из-за него падало
+    readonly_fields = ("created_at",)
+
+    list_editable = ("is_sold_out", "is_bestseller")
     inlines = [CandleVariantInline, CandleImageInline]
 
+
+# =========================
+# GALLERY
+# =========================
 @admin.register(GalleryItem)
 class GalleryItemAdmin(admin.ModelAdmin):
     list_display = (
@@ -78,9 +96,9 @@ class GalleryItemAdmin(admin.ModelAdmin):
         "is_active",
         "created_at",
     )
-    list_filter = ("media_type", "is_active")
-    search_fields = ("title", "caption")
-    ordering = ("sort_order", "-created_at")
+    list_filter = ("media_type", "is_active", "created_at")
+    search_fields = ("title", "slug", "caption")
+    ordering = ("sort_order", "-created_at", "id")
     list_editable = ("sort_order", "is_active")
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("created_at",)
@@ -115,5 +133,11 @@ class GalleryItemAdmin(admin.ModelAdmin):
                 ),
             },
         ),
-        ("Meta", {"fields": ("created_at",)}),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
     )

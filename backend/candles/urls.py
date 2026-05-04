@@ -4,15 +4,13 @@ from .views import (
     CategoryViewSet,
     CollectionViewSet,
     CandleViewSet,
-    AboutGalleryItemViewSet,
-    AboutReviewItemViewSet,
+    GalleryItemViewSet,
 )
 
 router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="category")
 router.register(r"collections", CollectionViewSet, basename="collection")
 router.register(r"candles", CandleViewSet, basename="candle")
-router.register(r"about-gallery", AboutGalleryItemViewSet, basename="about-gallery")
-router.register(r"about-reviews", AboutReviewItemViewSet, basename="about-reviews")
+router.register(r"gallery", GalleryItemViewSet, basename="gallery")
 
 urlpatterns = router.urls

@@ -6,22 +6,23 @@ from rest_framework.response import Response
 
 from .filters import CandleFilter
 from .models import (
-    AboutGalleryItem,
-    AboutReviewItem,
+    GalleryItem,
     Candle,
     Category,
     Collection,
 )
 from .permissions import IsStaffOrReadOnly
 from .serializers import (
-    AboutGalleryItemSerializer,
-    AboutReviewItemSerializer,
+    GalleryItemSerializer,
     CandleSerializer,
     CategorySerializer,
     CollectionSerializer,
 )
 
 
+# =========================
+# CATEGORY
+# =========================
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -30,6 +31,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOrReadOnly]
 
 
+# =========================
+# COLLECTION
+# =========================
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.select_related("parent").prefetch_related("children")
     serializer_class = CollectionSerializer
@@ -77,14 +81,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
         else:
             candles = candles_qs.filter(collections=collection).distinct()
 
-        serializer = CandleSerializer(
-            candles,
-            many=True,
-            context={"request": request},
-        )
+        serializer = CandleSerializer(candles, many=True, context={"request": request})
         return Response(serializer.data)
 
 
+# =========================
+# CANDLES
+# =========================
 class CandleViewSet(viewsets.ModelViewSet):
     queryset = (
         Candle.objects.select_related("category")
@@ -118,20 +121,13 @@ class CandleViewSet(viewsets.ModelViewSet):
     ordering_fields = ["price", "created_at", "name"]
     ordering = ["-created_at"]
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["request"] = self.request
-        return context
-
     @action(detail=True, methods=["get"])
     def collection_scents(self, request, slug=None):
         candle = self.get_object()
 
         child_collection = candle.collections.filter(parent__isnull=False).first()
-
         if not child_collection:
             child_collection = candle.collections.filter(parent__isnull=True).first()
-
         if not child_collection:
             return Response([])
 
@@ -158,8 +154,11 @@ class CandleViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class AboutGalleryItemViewSet(viewsets.ModelViewSet):
-    serializer_class = AboutGalleryItemSerializer
+# =========================
+# GALLERY 
+# =========================
+class GalleryItemViewSet(viewsets.ModelViewSet):
+    serializer_class = GalleryItemSerializer
     permission_classes = [IsStaffOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "slug", "caption"]
@@ -167,22 +166,13 @@ class AboutGalleryItemViewSet(viewsets.ModelViewSet):
     ordering = ["sort_order", "-created_at", "id"]
 
     def get_queryset(self):
-        qs = AboutGalleryItem.objects.all()
+        qs = GalleryItem.objects.all()
+
+        content_type = self.request.query_params.get("content_type")
+        if content_type:
+            qs = qs.filter(content_type=content_type)
+
         if self.request.user.is_staff:
             return qs.order_by("sort_order", "-created_at", "id")
-        return qs.filter(is_active=True).order_by("sort_order", "-created_at", "id")
 
-
-class AboutReviewItemViewSet(viewsets.ModelViewSet):
-    serializer_class = AboutReviewItemSerializer
-    permission_classes = [IsStaffOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "customer_name", "caption"]
-    ordering_fields = ["sort_order", "created_at", "customer_name", "title"]
-    ordering = ["sort_order", "-created_at", "id"]
-
-    def get_queryset(self):
-        qs = AboutReviewItem.objects.all()
-        if self.request.user.is_staff:
-            return qs.order_by("sort_order", "-created_at", "id")
         return qs.filter(is_active=True).order_by("sort_order", "-created_at", "id")

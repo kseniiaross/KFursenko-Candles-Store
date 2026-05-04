@@ -30,7 +30,6 @@ const Profile = React.lazy(() => import("./pages/Profile"));
 const StoryMission = React.lazy(() => import("./pages/StoryMission"));
 const Contacts = React.lazy(() => import("./pages/Contacts"));
 const Gallery = React.lazy(() => import("./pages/Gallery"));
-const Reviews = React.lazy(() => import("./pages/Reviews"));
 const RecommendationQuiz = React.lazy(() => import("./pages/RecommendationQuiz"));
 const RecommendationResult = React.lazy(() => import("./pages/RecommendationResult"));
 const Delivery = React.lazy(() => import("./pages/CustomerCare/Delivery"));
@@ -127,7 +126,6 @@ const App: React.FC = () => {
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/story-mission" element={<StoryMission />} />
             <Route path="/gallery" element={<Gallery />} />
-            <Route path="/reviews" element={<Reviews />} />
 
             <Route path="/recommendation-quiz" element={<RecommendationQuiz />} />
             <Route
