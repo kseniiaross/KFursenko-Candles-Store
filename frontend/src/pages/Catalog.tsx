@@ -26,6 +26,10 @@ function buildOptimizedImageUrl(url: string, width: number): string {
   if (!url) return "";
 
   if (url.includes("res.cloudinary.com") && url.includes("/upload/")) {
+    if (url.includes("/upload/f_auto") || url.includes("/upload/q_auto")) {
+      return url;
+    }
+
     return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
   }
 
@@ -39,6 +43,7 @@ const Catalog: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const debounceRef = useRef<number | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [candles, setCandles] = useState<Candle[]>([]);
@@ -63,7 +68,11 @@ const Catalog: React.FC = () => {
   }, [categoryParam]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = window.setTimeout(() => {
       const next = new URLSearchParams(searchParams);
       const cleanSearch = searchInput.trim();
 
@@ -77,9 +86,11 @@ const Catalog: React.FC = () => {
     }, SEARCH_DEBOUNCE_MS);
 
     return () => {
-      window.clearTimeout(timeout);
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+      }
     };
-  }, [searchInput, searchParams, setSearchParams]);
+  }, [searchInput, setSearchParams]);
 
   useEffect(() => {
     let active = true;
@@ -90,11 +101,19 @@ const Catalog: React.FC = () => {
         setError("");
         setVisibleCount(ITEMS_PER_BATCH);
 
-        const categoriesData = await listCategories();
+        let categoriesData: Category[] = [];
 
-        if (!active) return;
+        try {
+          categoriesData = await listCategories();
 
-        setCategories(categoriesData);
+          if (!active) return;
+
+          setCategories(categoriesData);
+        } catch {
+          if (!active) return;
+
+          setCategories([]);
+        }
 
         const resolvedCategoryId = categorySlug
           ? categoriesData.find((category) => category.slug === categorySlug)?.id
@@ -111,9 +130,11 @@ const Catalog: React.FC = () => {
         setCandles(candlesData);
       } catch {
         if (!active) return;
+
         setError(t("catalog.loadError"));
       } finally {
         if (!active) return;
+
         setLoading(false);
       }
     }
@@ -238,6 +259,7 @@ const Catalog: React.FC = () => {
                   className="catalog__categoryInline"
                   value={categoryParam}
                   onChange={(event) => onCategoryChange(event.target.value)}
+                  disabled={categories.length === 0}
                 >
                   <option value="">{t("catalog.allCategories")}</option>
 
