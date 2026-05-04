@@ -95,6 +95,9 @@ class Offer(models.Model):
     priority = models.PositiveSmallIntegerField(default=100)
     is_active = models.BooleanField(default=True)
 
+    new_shopper_only = models.BooleanField(default=False)
+    new_shopper_days_active = models.PositiveSmallIntegerField(default=60)
+
     categories = models.ManyToManyField(Category, blank=True)
     collections = models.ManyToManyField(Collection, blank=True)
     candles = models.ManyToManyField("Candle", blank=True)
@@ -112,9 +115,34 @@ class Offer(models.Model):
         if self.offer_start and self.offer_end and self.offer_start >= self.offer_end:
             raise ValidationError("Invalid dates")
 
+        if self.discount_percent and not (1 <= self.discount_percent < 100):
+            raise ValidationError("Discount must be between 1 and 99")
+
+    @property
+    def is_currently_active(self):
+        now = timezone.now()
+
+        if not self.is_active:
+            return False
+        if self.offer_start and now < self.offer_start:
+            return False
+        if self.offer_end and now > self.offer_end:
+            return False
+
+        return True
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title) or "offer"
+        if not self.badge_text:
+            if self.kind == self.Kind.DISCOUNT and self.discount_percent:
+                self.badge_text = f"-{self.discount_percent}%"
+            elif self.kind == self.Kind.NEW_SHOPPER:
+                self.badge_text = "New shopper"
+            elif self.kind == self.Kind.B1G2:
+                self.badge_text = "Buy 1 get 2"
+            elif self.kind == self.Kind.HOLIDAY:
+                self.badge_text = "Holiday"
 
         super().save(*args, **kwargs)
 
@@ -170,7 +198,6 @@ class CandleVariant(models.Model):
 
     class Meta:
         unique_together = ("candle", "size")
-        ordering = ("id",)
 
     def __str__(self):
         return f"{self.candle.name} - {self.size}"
@@ -192,7 +219,7 @@ class CandleImage(models.Model):
 
 
 # ======================================================
-# GALLERY 
+# GALLERY
 # ======================================================
 class GalleryItem(models.Model):
     class MediaType(models.TextChoices):
@@ -206,17 +233,8 @@ class GalleryItem(models.Model):
     title = models.CharField(max_length=180)
     slug = models.SlugField(max_length=200, unique=True, blank=True)
 
-    media_type = models.CharField(
-        max_length=20,
-        choices=MediaType.choices,
-        default=MediaType.IMAGE,
-    )
-
-    content_type = models.CharField(
-        max_length=20,
-        choices=ContentType.choices,
-        default=ContentType.GALLERY,
-    )
+    media_type = models.CharField(max_length=20, choices=MediaType.choices)
+    content_type = models.CharField(max_length=20, choices=ContentType.choices, default=ContentType.GALLERY)
 
     media = CloudinaryField("media", resource_type="auto")
     preview_image = CloudinaryField("preview_image", blank=True, null=True)

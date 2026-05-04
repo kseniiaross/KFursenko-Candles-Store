@@ -68,7 +68,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
                 "images",
                 "variants",
                 "offers",
-                "direct_offers",
             )
             .distinct()
         )
@@ -96,7 +95,6 @@ class CandleViewSet(viewsets.ModelViewSet):
             "images",
             "variants",
             "offers",
-            "direct_offers",
         )
         .all()
     )
@@ -128,6 +126,7 @@ class CandleViewSet(viewsets.ModelViewSet):
         child_collection = candle.collections.filter(parent__isnull=False).first()
         if not child_collection:
             child_collection = candle.collections.filter(parent__isnull=True).first()
+
         if not child_collection:
             return Response([])
 
@@ -138,7 +137,6 @@ class CandleViewSet(viewsets.ModelViewSet):
                 "images",
                 "variants",
                 "offers",
-                "direct_offers",
             )
             .filter(collections=child_collection)
             .exclude(id=candle.id)
@@ -155,7 +153,7 @@ class CandleViewSet(viewsets.ModelViewSet):
 
 
 # =========================
-# GALLERY 
+# GALLERY
 # =========================
 class GalleryItemViewSet(viewsets.ModelViewSet):
     serializer_class = GalleryItemSerializer
