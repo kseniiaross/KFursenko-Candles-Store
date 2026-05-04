@@ -5,7 +5,12 @@ from rest_framework import permissions, status, throttling
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import LumiereReplyInSerializer, LumiereReplyOutSerializer
+from .serializers import (
+    LumiereReplyInSerializer,
+    LumiereReplyOutSerializer,
+    LumiereSearchInSerializer,
+    LumiereSearchOutSerializer,
+)
 from .services import (
     build_store_context,
     call_openai_reply,
@@ -22,7 +27,6 @@ _CATALOG_URL_RE = re.compile(
 
 
 def extract_slug_from_text(text: str) -> str | None:
-    """Return the first candle slug found in a catalog URL."""
     if not text:
         return None
 
@@ -41,16 +45,20 @@ class LumiereUserThrottle(throttling.UserRateThrottle):
     scope = "lumiere_user"
 
 
+class LumiereSearchThrottle(throttling.AnonRateThrottle):
+    scope = "lumiere_search"
+
+
 class LumiereReplyView(APIView):
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
     throttle_classes = [LumiereAnonThrottle, LumiereUserThrottle]
 
     def post(self, request):
-        ser = LumiereReplyInSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        data = ser.validated_data
+        serializer = LumiereReplyInSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        data = serializer.validated_data
         text = data["text"]
         locale = data.get("locale", "en")
         user_name = (data.get("userName") or "").strip() or None
@@ -58,29 +66,15 @@ class LumiereReplyView(APIView):
 
         slug = extract_slug_from_text(text)
 
-        logger.warning("LUMIERE TEXT: %s", text)
-        logger.warning("LUMIERE EXTRACTED SLUG: %s", slug)
-
         if slug:
-            candle = get_candle_by_slug(slug)
-
-            logger.warning("LUMIERE CANDLE BY SLUG: %s", candle)
-
-            if candle:
-                suggestions = [candle]
-            else:
-                clean_query = slug.replace("-", " ")
-                suggestions = search_candles(clean_query, limit=6)
-
-                logger.warning(
-                    "LUMIERE FALLBACK SEARCH QUERY: %s | RESULTS: %s",
-                    clean_query,
-                    suggestions,
-                )
+            candle = get_candle_by_slug(slug, locale=locale)
+            suggestions = [candle] if candle else search_candles(
+                slug.replace("-", " "),
+                limit=6,
+                locale=locale,
+            )
         else:
-            suggestions = search_candles(text, limit=6)
-
-        logger.warning("LUMIERE FINAL SUGGESTIONS: %s", suggestions)
+            suggestions = search_candles(text, limit=6, locale=locale)
 
         store_context = build_store_context(suggestions)
 
@@ -94,6 +88,7 @@ class LumiereReplyView(APIView):
             )
         except Exception:
             logger.exception("Lumiere reply failed")
+
             answer_text = (
                 "Sorry, something went wrong. Please try again."
                 if locale == "en"
@@ -104,12 +99,39 @@ class LumiereReplyView(APIView):
                 else "Désolée, quelque chose s'est mal passé. Veuillez réessayer."
             )
 
-        out = {"text": answer_text}
+        output = {"text": answer_text}
 
         if suggestions:
-            out["suggestions"] = suggestions
+            output["suggestions"] = suggestions
 
-        out_ser = LumiereReplyOutSerializer(data=out)
-        out_ser.is_valid(raise_exception=True)
+        output_serializer = LumiereReplyOutSerializer(data=output)
+        output_serializer.is_valid(raise_exception=True)
 
-        return Response(out_ser.data, status=status.HTTP_200_OK)
+        return Response(output_serializer.data, status=status.HTTP_200_OK)
+
+
+class LumiereSearchView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [LumiereSearchThrottle]
+
+    def post(self, request):
+        serializer = LumiereSearchInSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        query = data["query"]
+        locale = data.get("locale", "en")
+        limit = data.get("limit", 6)
+
+        suggestions = search_candles(query, limit=limit, locale=locale)
+
+        output_serializer = LumiereSearchOutSerializer(
+            data={
+                "query": query,
+                "suggestions": suggestions,
+            }
+        )
+        output_serializer.is_valid(raise_exception=True)
+
+        return Response(output_serializer.data, status=status.HTTP_200_OK)

@@ -1,28 +1,28 @@
 export interface CollectionParent {
-  id: number
-  name: string
-  slug: string
+  id: number;
+  name: string;
+  slug: string;
 }
 
 export interface CollectionChild {
-  id: number
-  name: string
-  slug: string
+  id: number;
+  name: string;
+  slug: string;
 }
 
 export interface Collection {
-  id: number
-  name: string
-  slug: string
-  is_group?: boolean
-  parent?: CollectionParent | null
-  children?: CollectionChild[]
+  id: number;
+  name: string;
+  slug: string;
+  is_group?: boolean;
+  parent?: CollectionParent | null;
+  children?: CollectionChild[];
 }
 
 export interface Category {
-  id: number
-  name: string
-  slug: string
+  id: number;
+  name: string;
+  slug: string;
 }
 
 export type BadgeKind =
@@ -31,65 +31,115 @@ export type BadgeKind =
   | "b1g2"
   | "holiday"
   | "discount"
-  | string
+  | "discounted_candles"
+  | string;
 
 export interface CandleBadge {
-  slug: string
-  badge_text: string
-  kind: BadgeKind
-  discount_percent?: number | null
-  priority?: number
+  slug: string;
+  badge_text: string;
+  kind: BadgeKind;
+  discount_percent?: number | null;
+  priority?: number;
 }
 
 export interface CandleImage {
-  id: number
-  image: string
-  sort_order: number
+  id: number;
+  image: string;
+  sort_order: number;
 }
-
-/* =========================
-   VARIANT MODEL (NEW)
-========================= */
 
 export interface CandleVariant {
-  id: number
-  size: string
-  price: string
-  stock_qty: number
-  is_active: boolean
+  id: number;
+  size: string;
+  price: string;
+  stock_qty: number;
+  is_active: boolean;
 }
 
-/* =========================
-   CANDLE MODEL
-========================= */
-
 export interface Candle {
-  id: number
-  name: string
-  slug: string
-  description: string
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
 
-  image: string | null
-  images?: CandleImage[]
+  name_en?: string;
+  name_ru?: string;
+  name_es?: string;
+  name_fr?: string;
 
-  /* fallback price (optional now) */
-  price?: string
+  description_en?: string;
+  description_ru?: string;
+  description_es?: string;
+  description_fr?: string;
 
-  discount_price?: number | null
+  fragrance_family?: string;
+  intensity?: string;
 
-  stock_qty?: number
-  in_stock?: boolean
+  top_notes?: string[];
+  heart_notes?: string[];
+  base_notes?: string[];
+  mood_tags?: string[];
+  use_case_tags?: string[];
+  ideal_spaces?: string[];
+  season_tags?: string[];
 
-  is_sold_out: boolean
-  is_bestseller: boolean
+  image: string | null;
+  images?: CandleImage[];
 
-  created_at: string
+  price?: string | null;
+  discount_price?: number | string | null;
 
-  category?: Category
-  collections: Collection[]
+  stock_qty?: number;
+  in_stock?: boolean;
 
-  badges?: CandleBadge[]
+  is_sold_out: boolean;
+  is_bestseller: boolean;
 
-  /* NEW */
-  variants?: CandleVariant[]
+  created_at: string;
+
+  category?: Category;
+  collections: Collection[];
+
+  badges?: CandleBadge[];
+  variants?: CandleVariant[];
+}
+
+export function getLowestActiveVariant(candle: Candle): CandleVariant | null {
+  const activeVariants = candle.variants?.filter(
+    (variant) => variant.is_active && Number(variant.price) > 0,
+  );
+
+  if (!activeVariants || activeVariants.length === 0) {
+    return null;
+  }
+
+  return [...activeVariants].sort(
+    (a, b) => Number(a.price) - Number(b.price),
+  )[0];
+}
+
+export function getDisplayPrice(candle: Candle): string {
+  const lowestVariant = getLowestActiveVariant(candle);
+
+  if (lowestVariant) {
+    return lowestVariant.price;
+  }
+
+  if (candle.price) {
+    return String(candle.price);
+  }
+
+  return "";
+}
+
+export function isCandleAvailable(candle: Candle): boolean {
+  if (candle.is_sold_out) return false;
+
+  const activeVariants = candle.variants?.filter((variant) => variant.is_active);
+
+  if (activeVariants && activeVariants.length > 0) {
+    return activeVariants.some((variant) => variant.stock_qty > 0);
+  }
+
+  return Boolean(candle.in_stock || (candle.stock_qty ?? 0) > 0);
 }

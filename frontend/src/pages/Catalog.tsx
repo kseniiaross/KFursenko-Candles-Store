@@ -3,6 +3,11 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import type { Candle, Category, CandleBadge } from "../types/candle";
+import {
+  getDisplayPrice,
+  getLowestActiveVariant,
+  isCandleAvailable,
+} from "../types/candle";
 import { listCandles, listCategories } from "../api/candles";
 import { useAppDispatch } from "../store/hooks";
 import { openSizeModal } from "../store/modalSlice";
@@ -10,6 +15,7 @@ import { openSizeModal } from "../store/modalSlice";
 import "../styles/Catalog.css";
 
 const ITEMS_PER_BATCH = 8;
+const SEARCH_DEBOUNCE_MS = 420;
 
 function normalizeBadges(badges?: CandleBadge[]): CandleBadge[] {
   if (!Array.isArray(badges)) return [];
@@ -33,12 +39,37 @@ const Catalog: React.FC = () => {
   const q = searchParams.get("q") ?? "";
   const categoryParam = searchParams.get("category") ?? "";
 
+  const [searchInput, setSearchInput] = useState(q);
+
+  useEffect(() => {
+    setSearchInput(q);
+  }, [q]);
+
   const categoryId = useMemo(() => {
     const numericValue = Number(categoryParam);
     return Number.isFinite(numericValue) && numericValue > 0
       ? numericValue
       : undefined;
   }, [categoryParam]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
+      const cleanSearch = searchInput.trim();
+
+      if (cleanSearch) {
+        next.set("q", cleanSearch);
+      } else {
+        next.delete("q");
+      }
+
+      setSearchParams(next, { replace: true });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [searchInput, searchParams, setSearchParams]);
 
   useEffect(() => {
     let active = true;
@@ -49,22 +80,18 @@ const Catalog: React.FC = () => {
         setError("");
         setVisibleCount(ITEMS_PER_BATCH);
 
-        const categoriesData = await listCategories();
+        const [categoriesData, candlesData] = await Promise.all([
+          listCategories(),
+          listCandles({
+            search: q.trim() || undefined,
+            category: categoryId,
+            ordering: "-created_at",
+          }),
+        ]);
+
         if (!active) return;
 
         setCategories(categoriesData);
-
-        const resolvedCategoryId = categorySlug
-          ? categoriesData.find((category) => category.slug === categorySlug)?.id
-          : categoryId;
-
-        const candlesData = await listCandles({
-          search: q.trim() ? q.trim() : undefined,
-          category: resolvedCategoryId,
-          ordering: "-created_at",
-        });
-
-        if (!active) return;
         setCandles(candlesData);
       } catch {
         if (!active) return;
@@ -80,7 +107,7 @@ const Catalog: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [q, categoryId, categorySlug, t]);
+  }, [q, categoryId, t]);
 
   const visibleCandles = useMemo(() => {
     return candles.slice(0, visibleCount);
@@ -96,263 +123,81 @@ const Catalog: React.FC = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const firstEntry = entries[0];
-
-        if (firstEntry?.isIntersecting) {
-          setVisibleCount((current) =>
-            Math.min(current + ITEMS_PER_BATCH, candles.length)
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + ITEMS_PER_BATCH, candles.length)
           );
         }
       },
-      {
-        root: null,
-        rootMargin: "240px",
-        threshold: 0,
-      }
+      { rootMargin: "240px" }
     );
 
     observer.observe(target);
 
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [candles.length, error, hasMoreCandles, loading]);
 
-  const updateParams = (updater: (next: URLSearchParams) => void): void => {
-    const next = new URLSearchParams(searchParams);
-    updater(next);
-    setSearchParams(next);
-  };
-
-  const onSearchChange = (value: string): void => {
-    updateParams((next) => {
-      const normalizedValue = value.trimStart();
-
-      if (normalizedValue.trim()) {
-        next.set("q", normalizedValue);
-      } else {
-        next.delete("q");
-      }
-    });
-  };
-
-  const onCategoryChange = (value: string): void => {
-    updateParams((next) => {
-      if (value) {
-        next.set("category", value);
-      } else {
-        next.delete("category");
-      }
-    });
-  };
-
-  const clearFilters = (): void => {
-    updateParams((next) => {
-      next.delete("q");
-      next.delete("category");
-    });
-  };
-
-  const hasActiveFilters = Boolean(q || categoryParam);
-
   const onAddToCart = (candle: Candle): void => {
-    if (!candle.variants || candle.variants.length === 0) return;
+    const variant = getLowestActiveVariant(candle);
+    if (!variant) return;
     dispatch(openSizeModal(candle));
   };
 
   return (
-    <main className="catalog" aria-labelledby="catalog-title">
+    <main className="catalog">
       <div className="catalog__inner">
-        <header className="catalog__header">
-          <div className="catalog__topRow">
-            <div className="catalog__headingGroup">
-              <h1 id="catalog-title" className="catalog__title">
-                {t("catalog.title")}
-              </h1>
-            </div>
-          </div>
+        <h1 className="catalog__title">{t("catalog.title")}</h1>
 
-          <form
-            className="catalog__filters"
-            role="search"
-            aria-label={t("catalog.filtersLabel")}
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <div className="catalog__filterItem catalog__filterItem--search">
-              <label className="catalog__label" htmlFor="catalog-search">
-                {t("catalog.searchLabel")}
-              </label>
+        <div className="catalog__grid">
+          {visibleCandles.map((product, index) => {
+            const coverUrl = product.image ?? "";
+            if (!coverUrl) return null;
 
-              <input
-                id="catalog-search"
-                className="catalog__searchLine"
-                type="search"
-                value={q}
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder={t("catalog.searchPlaceholder")}
-              />
-            </div>
+            const badges = normalizeBadges(product.badges);
+            const available = isCandleAvailable(product);
+            const displayPrice = getDisplayPrice(product);
+            const firstVariant = getLowestActiveVariant(product);
 
-            <div className="catalog__filterItem catalog__filterItem--category">
-              <label className="catalog__label" htmlFor="catalog-category">
-                {t("catalog.categoryLabel")}
-              </label>
+            const isPriorityImage = index === 0;
 
-              <div className="catalog__categoryWrap">
-                <select
-                  id="catalog-category"
-                  className="catalog__categoryInline"
-                  value={categoryParam}
-                  onChange={(event) => onCategoryChange(event.target.value)}
-                >
-                  <option value="">{t("catalog.allCategories")}</option>
+            return (
+              <article key={product.id} className="catalogCard">
+                <Link to={`/catalog/item/${product.slug}`}>
+                  <div className="catalogCard__media">
+                    <img
+                      className="catalogCard__img"
+                      src={`${coverUrl}?f_auto,q_auto,w=800`}
+                      srcSet={`
+                        ${coverUrl}?w=400 400w,
+                        ${coverUrl}?w=800 800w,
+                        ${coverUrl}?w=1200 1200w
+                      `}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      alt={product.name}
+                      loading={isPriorityImage ? "eager" : "lazy"}
+                      fetchPriority={isPriorityImage ? "high" : "auto"}
+                      decoding="async"
+                    />
+                  </div>
+                </Link>
 
-                  {categories.map((category) => (
-                    <option key={category.id} value={String(category.id)}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                <div className="catalogCard__body">
+                  <h2>{product.name}</h2>
+                  <div>{displayPrice ? `$${displayPrice}` : "Select size"}</div>
 
-            <button
-              type="button"
-              className="catalog__clearInline"
-              onClick={clearFilters}
-              disabled={!hasActiveFilters}
-            >
-              {t("catalog.clear")}
-            </button>
-          </form>
-        </header>
-
-        <div className="catalog__status" aria-live="polite" aria-atomic="true">
-          {loading ? <p className="catalog__state">{t("catalog.loading")}</p> : null}
-
-          {!loading && error ? (
-            <p className="catalog__state catalog__state--error">{error}</p>
-          ) : null}
+                  <button
+                    onClick={() => onAddToCart(product)}
+                    disabled={!firstVariant}
+                  >
+                    {available ? "Add to cart" : "Sold out"}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
-        {!loading && !error ? (
-          <>
-            <section
-              className="catalog__grid"
-              aria-label={t("catalog.productListLabel")}
-            >
-              {visibleCandles.map((product, index) => {
-                const coverUrl = product.image ?? "";
-                if (!coverUrl) return null;
-
-                const destination = `/catalog/item/${product.slug}`;
-                const badges = normalizeBadges(product.badges);
-                const showSoldOut = Boolean(product.is_sold_out);
-                const showBestseller = Boolean(product.is_bestseller);
-                const firstVariant =
-                  product.variants && product.variants.length > 0
-                    ? product.variants[0]
-                    : null;
-
-                const isPriorityImage = index === 0;
-
-                return (
-                  <article key={product.id} className="catalogCard">
-                    <Link
-                      to={destination}
-                      className="catalogCard__link"
-                      aria-label={`Open ${product.name}`}
-                    >
-                      <div className="catalogCard__media">
-                        <img
-                          className="catalogCard__img"
-                          src={coverUrl}
-                          alt={product.name}
-                          loading={isPriorityImage ? "eager" : "lazy"}
-                          fetchPriority={isPriorityImage ? "high" : "auto"}
-                          decoding="async"
-                          width={900}
-                          height={600}
-                        />
-
-                        {(showSoldOut || showBestseller || badges.length > 0) && (
-                          <div
-                            className="catalogCard__badges"
-                            aria-label={t("catalog.badgesLabel")}
-                          >
-                            {showSoldOut ? (
-                              <span className="badge badge--soldout">
-                                {t("catalog.soldOut")}
-                              </span>
-                            ) : null}
-
-                            {showBestseller ? (
-                              <span className="badge badge--bestseller">
-                                {t("catalog.bestseller")}
-                              </span>
-                            ) : null}
-
-                            {badges.map((badge) => (
-                              <span
-                                key={badge.slug}
-                                className="badge badge--offer"
-                                title={badge.kind}
-                              >
-                                {badge.badge_text}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-
-                    <div className="catalogCard__body">
-                      <Link
-                        to={destination}
-                        className="catalogCard__metaRow"
-                        aria-label={t("catalog.productMetaLabel")}
-                      >
-                        <h2 className="catalogCard__name">{product.name}</h2>
-
-                        <div className="catalogCard__price">
-                          {firstVariant ? `$${firstVariant.price}` : "Select size"}
-                        </div>
-                      </Link>
-
-                      <div className="catalogCard__actions">
-                        {product.is_sold_out ? (
-                          <button
-                            type="button"
-                            className="catalogCard__btn catalogCard__btn--notify"
-                          >
-                            {t("catalog.notifyMe")}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="catalogCard__btn"
-                            onClick={() => onAddToCart(product)}
-                            disabled={!firstVariant}
-                          >
-                            {t("catalog.addToCart")}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
-
-            {hasMoreCandles ? (
-              <div
-                ref={loadMoreRef}
-                className="catalog__loadMoreTrigger"
-                aria-hidden="true"
-              />
-            ) : null}
-          </>
-        ) : null}
+        {hasMoreCandles && <div ref={loadMoreRef} />}
       </div>
     </main>
   );

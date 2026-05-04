@@ -11,7 +11,7 @@ export type CandleListParams = {
 
 type SupportedApiLanguage = "en" | "ru" | "es" | "fr";
 
-function getCurrentLanguage(): SupportedApiLanguage {
+export function getCurrentApiLanguage(): SupportedApiLanguage {
   const lang = i18n.language?.split("-")[0];
 
   if (lang === "ru" || lang === "es" || lang === "fr") {
@@ -23,13 +23,13 @@ function getCurrentLanguage(): SupportedApiLanguage {
 
 function toQuery(params?: CandleListParams): Record<string, string> {
   const query: Record<string, string> = {
-    lang: getCurrentLanguage(),
+    lang: getCurrentApiLanguage(),
   };
 
   if (!params) return query;
 
-  if (params.search) {
-    query.search = params.search;
+  if (params.search?.trim()) {
+    query.search = params.search.trim();
   }
 
   if (params.ordering) {
@@ -62,9 +62,9 @@ export async function getCandleBySlug(slug: string): Promise<Candle> {
     `/candles/candles/${encodeURIComponent(safeSlug)}/`,
     {
       params: {
-        lang: getCurrentLanguage(),
+        lang: getCurrentApiLanguage(),
       },
-    }
+    },
   );
 
   return response.data;
@@ -77,9 +77,9 @@ export async function getCollectionScentsBySlug(slug: string): Promise<Candle[]>
     `/candles/candles/${encodeURIComponent(safeSlug)}/collection_scents/`,
     {
       params: {
-        lang: getCurrentLanguage(),
+        lang: getCurrentApiLanguage(),
       },
-    }
+    },
   );
 
   return response.data;
@@ -88,7 +88,7 @@ export async function getCollectionScentsBySlug(slug: string): Promise<Candle[]>
 export async function listCategories(): Promise<Category[]> {
   const response = await api.get<Category[]>("/candles/categories/", {
     params: {
-      lang: getCurrentLanguage(),
+      lang: getCurrentApiLanguage(),
     },
   });
 

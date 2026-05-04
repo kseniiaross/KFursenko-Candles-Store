@@ -1,5 +1,6 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -38,7 +39,6 @@ const PREFERRED_VOICE_KEYWORDS: Record<Locale, string[]> = {
 
 function stopSpeaking(): void {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
   window.speechSynthesis.cancel();
 }
 
@@ -155,6 +155,7 @@ function getLastAssistantMessage(
 }
 
 const LumiereWidget: React.FC = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
   const isOpen = useAppSelector((state) => state.lumiere.isOpen);
@@ -181,92 +182,6 @@ const LumiereWidget: React.FC = () => {
   const messageInputId = useId();
   const languageSelectId = useId();
   const messageListId = useId();
-
-  const title = "Lumière";
-
-  const localizedText = useMemo(() => {
-    if (locale === "ru") {
-      return {
-        open: "Открыть ассистента Lumière",
-        close: "Закрыть ассистента Lumière",
-        subtitle: "Ваш помощник по свечам",
-        language: "Язык",
-        speechOn: "Включить озвучивание ответов",
-        speechOff: "Выключить озвучивание ответов",
-        messages: "Сообщения чата",
-        input: "Введите сообщение",
-        placeholder: "Спроси про аромат, доставку, уход…",
-        send: "Отправить",
-        clear: "Новый чат",
-        typing: "Lumière печатает…",
-        suggestedProducts: "Рекомендованные товары",
-        inStock: "В наличии",
-        soldOut: "Нет в наличии",
-        openProduct: "Открыть товар {{name}}",
-      };
-    }
-
-    if (locale === "es") {
-      return {
-        open: "Abrir asistente Lumière",
-        close: "Cerrar asistente Lumière",
-        subtitle: "Tu asistente de velas",
-        language: "Idioma",
-        speechOn: "Activar lectura en voz alta",
-        speechOff: "Desactivar lectura en voz alta",
-        messages: "Mensajes del chat",
-        input: "Escribe un mensaje",
-        placeholder: "Pregunta sobre aroma, envío, cuidado…",
-        send: "Enviar",
-        clear: "Nuevo chat",
-        typing: "Lumière está escribiendo…",
-        suggestedProducts: "Productos sugeridos",
-        inStock: "Disponible",
-        soldOut: "Agotado",
-        openProduct: "Abrir producto {{name}}",
-      };
-    }
-
-    if (locale === "fr") {
-      return {
-        open: "Ouvrir l’assistant Lumière",
-        close: "Fermer l’assistant Lumière",
-        subtitle: "Votre assistante bougies",
-        language: "Langue",
-        speechOn: "Activer la lecture vocale",
-        speechOff: "Désactiver la lecture vocale",
-        messages: "Messages du chat",
-        input: "Saisir un message",
-        placeholder: "Demandez un parfum, la livraison, l’entretien…",
-        send: "Envoyer",
-        clear: "Nouveau chat",
-        typing: "Lumière écrit…",
-        suggestedProducts: "Produits suggérés",
-        inStock: "En stock",
-        soldOut: "Rupture de stock",
-        openProduct: "Ouvrir le produit {{name}}",
-      };
-    }
-
-    return {
-      open: "Open Lumière assistant",
-      close: "Close Lumière assistant",
-      subtitle: "Your candle assistant",
-      language: "Language",
-      speechOn: "Turn on voice playback",
-      speechOff: "Turn off voice playback",
-      messages: "Chat messages",
-      input: "Enter message",
-      placeholder: "Ask about scent, shipping, care…",
-      send: "Send",
-      clear: "New chat",
-      typing: "Lumière is typing…",
-      suggestedProducts: "Suggested products",
-      inStock: "In stock",
-      soldOut: "Sold out",
-      openProduct: "Open product {{name}}",
-    };
-  }, [locale]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -388,6 +303,9 @@ const LumiereWidget: React.FC = () => {
     setInput("");
   };
 
+  const openLabel = isOpen ? t("lumiere.close") : t("lumiere.open");
+  const speechLabel = speak ? t("lumiere.speechOff") : t("lumiere.speechOn");
+
   return (
     <>
       <button
@@ -395,7 +313,7 @@ const LumiereWidget: React.FC = () => {
         type="button"
         className="lumiereFab"
         onClick={() => dispatch(toggle())}
-        aria-label={isOpen ? localizedText.close : localizedText.open}
+        aria-label={openLabel}
         aria-expanded={isOpen}
         aria-controls={isOpen ? dialogTitleId : undefined}
       >
@@ -416,18 +334,18 @@ const LumiereWidget: React.FC = () => {
           <header className="lumiereHeader">
             <div className="lumiereHeader__left">
               <h2 id={dialogTitleId} className="lumiereTitle">
-                {title}
+                Lumière
               </h2>
 
               <p id={dialogDescId} className="lumiereSub">
-                {localizedText.subtitle}
+                {t("lumiere.subtitle")}
               </p>
             </div>
 
             <div className="lumiereHeader__right">
               <div className="lumiereField">
                 <label className="lumiereSrOnly" htmlFor={languageSelectId}>
-                  {localizedText.language}
+                  {t("lumiere.language")}
                 </label>
 
                 <select
@@ -437,7 +355,7 @@ const LumiereWidget: React.FC = () => {
                   onChange={(event) =>
                     onLocaleChange(event.target.value as Locale)
                   }
-                  aria-label={localizedText.language}
+                  aria-label={t("lumiere.language")}
                 >
                   <option value="en">EN</option>
                   <option value="ru">RU</option>
@@ -450,11 +368,9 @@ const LumiereWidget: React.FC = () => {
                 type="button"
                 className={`lumiereVoiceButton ${speak ? "is-active" : ""}`}
                 onClick={onSpeechToggle}
-                aria-label={
-                  speak ? localizedText.speechOff : localizedText.speechOn
-                }
+                aria-label={speechLabel}
                 aria-pressed={speak}
-                title={speak ? localizedText.speechOff : localizedText.speechOn}
+                title={speechLabel}
               >
                 <span aria-hidden="true">🔊</span>
               </button>
@@ -464,7 +380,7 @@ const LumiereWidget: React.FC = () => {
                 className="lumiereClear"
                 onClick={onClearConversation}
               >
-                {localizedText.clear}
+                {t("lumiere.clear")}
               </button>
 
               <button
@@ -474,7 +390,7 @@ const LumiereWidget: React.FC = () => {
                   stopSpeaking();
                   dispatch(close());
                 }}
-                aria-label={localizedText.close}
+                aria-label={t("lumiere.close")}
               >
                 ×
               </button>
@@ -485,7 +401,7 @@ const LumiereWidget: React.FC = () => {
             ref={listRef}
             id={messageListId}
             className="lumiereBody"
-            aria-label={localizedText.messages}
+            aria-label={t("lumiere.messages")}
             aria-live="polite"
             aria-relevant="additions text"
           >
@@ -502,17 +418,16 @@ const LumiereWidget: React.FC = () => {
                   {message.suggestions && message.suggestions.length > 0 ? (
                     <div
                       className="lumiereSuggest"
-                      aria-label={localizedText.suggestedProducts}
+                      aria-label={t("lumiere.suggestedProducts")}
                     >
                       {message.suggestions.map((product) => (
                         <Link
                           key={product.id}
                           to={`/catalog/item/${product.slug}`}
                           className="lumiereCard"
-                          aria-label={localizedText.openProduct.replace(
-                            "{{name}}",
-                            product.name
-                          )}
+                          aria-label={t("lumiere.openProduct", {
+                            name: product.name,
+                          })}
                         >
                           <div className="lumiereCard__top">
                             <div className="lumiereCard__name">
@@ -521,15 +436,17 @@ const LumiereWidget: React.FC = () => {
 
                             <div className="lumiereCard__price">
                               {product.price
-                                ? `From $${product.price}`
-                                : "See product"}
+                                ? t("lumiere.fromPrice", {
+                                    price: product.price,
+                                  })
+                                : t("lumiere.seeProduct")}
                             </div>
                           </div>
 
                           <div className="lumiereCard__meta">
                             {product.in_stock
-                              ? localizedText.inStock
-                              : localizedText.soldOut}
+                              ? t("lumiere.inStock")
+                              : t("lumiere.soldOut")}
                           </div>
                         </Link>
                       ))}
@@ -544,15 +461,15 @@ const LumiereWidget: React.FC = () => {
             ))}
 
             {status === "loading" ? (
-              <div className="lumiereTyping" aria-label={localizedText.typing}>
-                {localizedText.typing}
+              <div className="lumiereTyping" aria-label={t("lumiere.typing")}>
+                {t("lumiere.typing")}
               </div>
             ) : null}
           </div>
 
           <footer className="lumiereFooter">
             <label className="lumiereSrOnly" htmlFor={messageInputId}>
-              {localizedText.input}
+              {t("lumiere.input")}
             </label>
 
             <input
@@ -562,8 +479,8 @@ const LumiereWidget: React.FC = () => {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={onInputKeyDown}
-              placeholder={localizedText.placeholder}
-              aria-label={localizedText.input}
+              placeholder={t("lumiere.placeholder")}
+              aria-label={t("lumiere.input")}
               aria-controls={messageListId}
               autoComplete="off"
             />
@@ -576,7 +493,7 @@ const LumiereWidget: React.FC = () => {
               }}
               disabled={!input.trim() || status === "loading"}
             >
-              {localizedText.send}
+              {t("lumiere.send")}
             </button>
           </footer>
         </section>

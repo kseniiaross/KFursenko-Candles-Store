@@ -4,6 +4,7 @@
   --catalog-grid-gap-x: 18px;
   --catalog-grid-gap-y: 28px;
   --catalog-clear-width: 104px;
+  --catalog-card-min-width: 300px;
 }
 
 /* ======================================================
@@ -94,11 +95,7 @@
   font-family: "Times New Roman", Times, serif;
   font-size: 1.55rem;
   line-height: 1.1;
-  transition:
-    border-color 180ms ease,
-    opacity 180ms ease;
-  appearance: none;
-  -webkit-appearance: none;
+  transition: border-color 180ms ease;
 }
 
 .catalog__searchLine::placeholder {
@@ -132,10 +129,8 @@
   background-image:
     linear-gradient(45deg, transparent 50%, currentColor 50%),
     linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: left center, right center;
-  background-size: 6px 6px, 6px 6px;
+  background-size: 6px 6px;
   background-repeat: no-repeat;
-  color: var(--app-text);
 }
 
 .catalog__categoryInline {
@@ -148,13 +143,8 @@
   color: var(--app-text);
   font-family: "Times New Roman", Times, serif;
   font-size: 1.12rem;
-  line-height: 1.1;
   cursor: pointer;
-  transition:
-    border-color 180ms ease,
-    opacity 180ms ease;
-  appearance: none;
-  -webkit-appearance: none;
+  transition: border-color 180ms ease;
 }
 
 .catalog__categoryInline:hover {
@@ -169,31 +159,22 @@
 .catalog__clearInline {
   align-self: end;
   height: 38px;
-  padding: 0;
   border: none;
   background: transparent;
-  color: var(--app-text);
-  font-family: "Times New Roman", Times, serif;
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.14em;
-  text-align: right;
   text-transform: uppercase;
   cursor: pointer;
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+  transition: opacity 160ms ease;
 }
 
 .catalog__clearInline:hover:not(:disabled) {
-  opacity: 0.72;
-  transform: translateY(-1px);
+  opacity: 0.7;
 }
 
 .catalog__clearInline:disabled {
   opacity: 0.35;
-  cursor: default;
-  transform: none;
 }
 
 /* ======================================================
@@ -205,29 +186,16 @@
   border-bottom-color: rgba(255, 255, 255, 0.32);
 }
 
-[data-theme="dark"] .catalog__searchLine:hover,
-[data-theme="dark"] .catalog__categoryInline:hover {
-  border-bottom-color: rgba(255, 255, 255, 0.56);
-}
-
-[data-theme="dark"] .catalog__searchLine:focus-visible,
-[data-theme="dark"] .catalog__categoryInline:focus-visible {
-  border-bottom-color: rgba(255, 255, 255, 0.88);
-}
-
 /* ======================================================
    STATUS
    ====================================================== */
 
 .catalog__status {
-  min-height: 0;
   margin-bottom: 4px;
 }
 
 .catalog__state {
-  margin: 0;
   font-size: 1rem;
-  line-height: 1.6;
 }
 
 .catalog__state--error {
@@ -240,9 +208,11 @@
 
 .catalog__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--catalog-card-min-width)), 1fr)
+  );
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
-  align-items: start;
   margin-top: 28px;
 }
 
@@ -254,14 +224,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .catalogCard__link {
   display: block;
-  min-width: 0;
-  max-width: 100%;
   color: inherit;
   text-decoration: none;
 }
@@ -272,24 +238,21 @@
   aspect-ratio: 3 / 2;
   overflow: hidden;
   background: #f5f3ef;
+
+  contain: layout paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 200px;
 }
 
 .catalogCard__img {
-  display: block;
   width: 100%;
   height: 100%;
-  aspect-ratio: 3 / 2;
   object-fit: cover;
-  object-position: center;
-  border-radius: 0;
-  transition:
-    transform 260ms ease,
-    filter 260ms ease;
+  transition: transform 220ms ease;
 }
 
 .catalogCard__link:hover .catalogCard__img {
   transform: scale(1.018);
-  filter: contrast(1.02);
 }
 
 .catalogCard__badges {
@@ -302,18 +265,12 @@
 }
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  max-width: 100%;
   padding: 4px 8px;
   border-radius: 999px;
   background: rgba(17, 17, 17, 0.94);
-  color: #ffffff;
+  color: #fff;
   font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.2;
   text-transform: uppercase;
 }
 
@@ -329,51 +286,26 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .catalogCard__metaRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
-  align-items: start;
   gap: 10px;
-  width: 100%;
-  min-width: 0;
-  color: inherit;
-  text-decoration: none;
 }
 
 .catalogCard__name {
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  font-family: "Times New Roman", Times, serif;
   font-size: 0.98rem;
   font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: 0.03em;
   text-transform: uppercase;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .catalogCard__price {
-  justify-self: end;
-  flex-shrink: 0;
-  padding-top: 1px;
   font-size: 0.9rem;
   font-weight: 700;
-  line-height: 1.05;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.catalogCard__actions {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .catalogCard__btn {
@@ -381,52 +313,18 @@
   min-height: 30px;
   border: 1px solid var(--app-border);
   background: var(--app-surface);
-  color: var(--app-text);
-  font-family: "Times New Roman", Times, serif;
   font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
-  transition:
-    transform 180ms ease,
-    background 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+  transition: transform 160ms ease;
 }
 
 .catalogCard__btn:hover {
-  background: var(--app-surface-strong);
   transform: translateY(-1px);
 }
 
-.catalogCard__btn:focus-visible,
-.catalogCard__metaRow:focus-visible,
-.catalogCard__link:focus-visible {
-  outline: 3px solid rgba(17, 17, 17, 0.82);
-  outline-offset: 3px;
-}
-
-[data-theme="dark"] .catalogCard__btn {
-  border-color: rgba(245, 239, 232, 0.94);
-  background: rgba(245, 239, 232, 0.94);
-  color: rgba(17, 17, 17, 0.95);
-}
-
-[data-theme="dark"] .catalogCard__btn:focus-visible,
-[data-theme="dark"] .catalogCard__metaRow:focus-visible,
-[data-theme="dark"] .catalogCard__link:focus-visible {
-  outline-color: rgba(245, 239, 232, 0.9);
-}
-
-.catalogCard__btn--notify {
-  border: 1px solid var(--app-border);
-  background: transparent;
-  color: var(--app-text);
-}
-
 .catalog__loadMoreTrigger {
-  width: 100%;
   height: 1px;
 }
 
@@ -439,10 +337,7 @@
     --catalog-max-width: 1520px;
     --catalog-grid-gap-x: 20px;
     --catalog-grid-gap-y: 30px;
-  }
-
-  .catalog__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --catalog-card-min-width: 350px;
   }
 
   .catalogCard__name {
@@ -457,61 +352,6 @@
 @media (max-width: 1599px) {
   :root {
     --catalog-max-width: 1360px;
-    --catalog-side-padding: 18px;
-    --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 28px;
-  }
-
-  .catalog__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: 26px;
-  }
-}
-
-/* ======================================================
-   LAPTOP / SMALL DESKTOP
-   ====================================================== */
-
-@media (max-width: 1280px) {
-  :root {
-    --catalog-max-width: 1080px;
-    --catalog-side-padding: 22px;
-    --catalog-grid-gap-x: 20px;
-    --catalog-grid-gap-y: 30px;
-  }
-
-  .catalog__filters {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr) auto;
-    gap: 16px;
-  }
-
-  .catalog__title {
-    font-size: 2.4rem;
-  }
-
-  .catalog__searchLine {
-    font-size: 1.4rem;
-  }
-
-  .catalog__categoryInline {
-    font-size: 1rem;
-  }
-
-  .catalog__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: 26px;
-  }
-
-  .catalogCard__media {
-    aspect-ratio: 3 / 2;
-  }
-
-  .catalogCard__name {
-    font-size: 0.92rem;
-  }
-
-  .catalogCard__price {
-    font-size: 0.86rem;
   }
 }
 
@@ -520,25 +360,8 @@
    ====================================================== */
 
 @media (max-width: 980px) {
-  :root {
-    --catalog-side-padding: 18px;
-    --catalog-grid-gap-x: 16px;
-    --catalog-grid-gap-y: 26px;
-  }
-
   .catalog__filters {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr);
-  }
-
-  .catalog__clearInline {
-    grid-column: 1 / -1;
-    width: fit-content;
-    height: 28px;
-    text-align: left;
-  }
-
-  .catalog__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
@@ -547,81 +370,16 @@
    ====================================================== */
 
 @media (max-width: 640px) {
-  :root {
-    --catalog-side-padding: 14px;
-    --catalog-grid-gap-y: 26px;
-  }
-
-  .catalog {
-    padding-bottom: 88px;
-  }
-
-  .catalog__title {
-    font-size: 1.85rem;
-    line-height: 1;
-  }
-
-  .catalog__filters {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-
-  .catalog__searchLine {
-    font-size: 1.28rem;
-  }
-
-  .catalog__categoryInline {
-    font-size: 1rem;
-  }
-
-  .catalog__clearInline {
-    width: fit-content;
-    text-align: left;
-  }
-
   .catalog__grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 26px;
-    margin-top: 24px;
+    grid-template-columns: 1fr;
   }
 
   .catalogCard__media {
     aspect-ratio: 4 / 3;
   }
 
-  .catalogCard__name {
-    font-size: 1.08rem;
-  }
-
-  .catalogCard__price {
-    font-size: 0.98rem;
-  }
-
   .catalogCard__btn {
     min-height: 44px;
-    font-size: 0.76rem;
-  }
-}
-
-/* ======================================================
-   SMALL MOBILE
-   ====================================================== */
-
-@media (max-width: 420px) {
-  :root {
-    --catalog-side-padding: 12px;
-  }
-
-  .catalog__title {
-    font-size: 1.7rem;
-  }
-
-  .catalogCard__name {
-    font-size: 1rem;
-  }
-
-  .catalogCard__price {
-    font-size: 0.92rem;
   }
 }
 
@@ -640,5 +398,15 @@
   .catalogCard__btn:hover,
   .catalog__clearInline:hover:not(:disabled) {
     transform: none;
+  }
+}
+
+/* ======================================================
+   FALLBACK
+   ====================================================== */
+
+@supports not (content-visibility: auto) {
+  .catalogCard__media {
+    contain: none;
   }
 }
