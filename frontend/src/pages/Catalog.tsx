@@ -22,6 +22,16 @@ function normalizeBadges(badges?: CandleBadge[]): CandleBadge[] {
   return [...badges].sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
 }
 
+function buildOptimizedImageUrl(url: string, width: number): string {
+  if (!url) return "";
+
+  if (url.includes("res.cloudinary.com") && url.includes("/upload/")) {
+    return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
+  }
+
+  return url;
+}
+
 const Catalog: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -80,18 +90,24 @@ const Catalog: React.FC = () => {
         setError("");
         setVisibleCount(ITEMS_PER_BATCH);
 
-        const [categoriesData, candlesData] = await Promise.all([
-          listCategories(),
-          listCandles({
-            search: q.trim() || undefined,
-            category: categoryId,
-            ordering: "-created_at",
-          }),
-        ]);
+        const categoriesData = await listCategories();
 
         if (!active) return;
 
         setCategories(categoriesData);
+
+        const resolvedCategoryId = categorySlug
+          ? categoriesData.find((category) => category.slug === categorySlug)?.id
+          : categoryId;
+
+        const candlesData = await listCandles({
+          search: q.trim() || undefined,
+          category: resolvedCategoryId,
+          ordering: "-created_at",
+        });
+
+        if (!active) return;
+
         setCandles(candlesData);
       } catch {
         if (!active) return;
@@ -107,7 +123,7 @@ const Catalog: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [q, categoryId, t]);
+  }, [q, categoryId, categorySlug, t]);
 
   const visibleCandles = useMemo(() => {
     return candles.slice(0, visibleCount);
@@ -124,80 +140,265 @@ const Catalog: React.FC = () => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          setVisibleCount((prev) =>
-            Math.min(prev + ITEMS_PER_BATCH, candles.length)
+          setVisibleCount((current) =>
+            Math.min(current + ITEMS_PER_BATCH, candles.length)
           );
         }
       },
-      { rootMargin: "240px" }
+      {
+        root: null,
+        rootMargin: "240px",
+        threshold: 0,
+      }
     );
 
     observer.observe(target);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [candles.length, error, hasMoreCandles, loading]);
+
+  const updateParams = (updater: (next: URLSearchParams) => void): void => {
+    const next = new URLSearchParams(searchParams);
+    updater(next);
+    setSearchParams(next, { replace: true });
+  };
+
+  const onCategoryChange = (value: string): void => {
+    updateParams((next) => {
+      if (value) {
+        next.set("category", value);
+      } else {
+        next.delete("category");
+      }
+    });
+  };
+
+  const clearFilters = (): void => {
+    setSearchInput("");
+
+    updateParams((next) => {
+      next.delete("q");
+      next.delete("category");
+    });
+  };
+
+  const hasActiveFilters = Boolean(q || categoryParam || searchInput.trim());
 
   const onAddToCart = (candle: Candle): void => {
     const variant = getLowestActiveVariant(candle);
     if (!variant) return;
+
     dispatch(openSizeModal(candle));
   };
 
   return (
-    <main className="catalog">
+    <main className="catalog" aria-labelledby="catalog-title">
       <div className="catalog__inner">
-        <h1 className="catalog__title">{t("catalog.title")}</h1>
+        <header className="catalog__header">
+          <div className="catalog__topRow">
+            <div className="catalog__headingGroup">
+              <h1 id="catalog-title" className="catalog__title">
+                {t("catalog.title")}
+              </h1>
+            </div>
+          </div>
 
-        <div className="catalog__grid">
-          {visibleCandles.map((product, index) => {
-            const coverUrl = product.image ?? "";
-            if (!coverUrl) return null;
+          <form
+            className="catalog__filters"
+            role="search"
+            aria-label={t("catalog.filtersLabel")}
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <div className="catalog__filterItem catalog__filterItem--search">
+              <label className="catalog__label" htmlFor="catalog-search">
+                {t("catalog.searchLabel")}
+              </label>
 
-            const badges = normalizeBadges(product.badges);
-            const available = isCandleAvailable(product);
-            const displayPrice = getDisplayPrice(product);
-            const firstVariant = getLowestActiveVariant(product);
+              <input
+                id="catalog-search"
+                className="catalog__searchLine"
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder={t("catalog.searchPlaceholder")}
+                autoComplete="off"
+              />
+            </div>
 
-            const isPriorityImage = index === 0;
+            <div className="catalog__filterItem catalog__filterItem--category">
+              <label className="catalog__label" htmlFor="catalog-category">
+                {t("catalog.categoryLabel")}
+              </label>
 
-            return (
-              <article key={product.id} className="catalogCard">
-                <Link to={`/catalog/item/${product.slug}`}>
-                  <div className="catalogCard__media">
-                    <img
-                      className="catalogCard__img"
-                      src={`${coverUrl}?f_auto,q_auto,w=800`}
-                      srcSet={`
-                        ${coverUrl}?w=400 400w,
-                        ${coverUrl}?w=800 800w,
-                        ${coverUrl}?w=1200 1200w
-                      `}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      alt={product.name}
-                      loading={isPriorityImage ? "eager" : "lazy"}
-                      fetchPriority={isPriorityImage ? "high" : "auto"}
-                      decoding="async"
-                    />
-                  </div>
-                </Link>
+              <div className="catalog__categoryWrap">
+                <select
+                  id="catalog-category"
+                  className="catalog__categoryInline"
+                  value={categoryParam}
+                  onChange={(event) => onCategoryChange(event.target.value)}
+                >
+                  <option value="">{t("catalog.allCategories")}</option>
 
-                <div className="catalogCard__body">
-                  <h2>{product.name}</h2>
-                  <div>{displayPrice ? `$${displayPrice}` : "Select size"}</div>
+                  {categories.map((category) => (
+                    <option key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-                  <button
-                    onClick={() => onAddToCart(product)}
-                    disabled={!firstVariant}
-                  >
-                    {available ? "Add to cart" : "Sold out"}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+            <button
+              type="button"
+              className="catalog__clearInline"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+            >
+              {t("catalog.clear")}
+            </button>
+          </form>
+        </header>
+
+        <div className="catalog__status" aria-live="polite" aria-atomic="true">
+          {loading ? (
+            <p className="catalog__state">{t("catalog.loading")}</p>
+          ) : null}
+
+          {!loading && error ? (
+            <p className="catalog__state catalog__state--error" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          {!loading && !error && candles.length === 0 ? (
+            <p className="catalog__state">No matching candles found.</p>
+          ) : null}
         </div>
 
-        {hasMoreCandles && <div ref={loadMoreRef} />}
+        {!loading && !error && candles.length > 0 ? (
+          <>
+            <section
+              className="catalog__grid"
+              aria-label={t("catalog.productListLabel")}
+            >
+              {visibleCandles.map((product, index) => {
+                const coverUrl = product.image ?? "";
+                if (!coverUrl) return null;
+
+                const optimizedSmall = buildOptimizedImageUrl(coverUrl, 480);
+                const optimizedMedium = buildOptimizedImageUrl(coverUrl, 800);
+                const optimizedLarge = buildOptimizedImageUrl(coverUrl, 1200);
+
+                const destination = `/catalog/item/${product.slug}`;
+                const badges = normalizeBadges(product.badges);
+                const available = isCandleAvailable(product);
+                const showSoldOut = !available;
+                const showBestseller = Boolean(product.is_bestseller);
+                const displayPrice = getDisplayPrice(product);
+                const firstVariant = getLowestActiveVariant(product);
+                const isPriorityImage = index === 0;
+
+                return (
+                  <article key={product.id} className="catalogCard">
+                    <Link
+                      to={destination}
+                      className="catalogCard__link"
+                      aria-label={`Open ${product.name}`}
+                    >
+                      <div className="catalogCard__media">
+                        <img
+                          className="catalogCard__img"
+                          src={optimizedMedium}
+                          srcSet={`${optimizedSmall} 480w, ${optimizedMedium} 800w, ${optimizedLarge} 1200w`}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          alt={product.name}
+                          loading={isPriorityImage ? "eager" : "lazy"}
+                          fetchPriority={isPriorityImage ? "high" : "auto"}
+                          decoding="async"
+                          width={900}
+                          height={600}
+                        />
+
+                        {(showSoldOut || showBestseller || badges.length > 0) && (
+                          <div
+                            className="catalogCard__badges"
+                            aria-label={t("catalog.badgesLabel")}
+                          >
+                            {showSoldOut ? (
+                              <span className="badge badge--soldout">
+                                {t("catalog.soldOut")}
+                              </span>
+                            ) : null}
+
+                            {showBestseller ? (
+                              <span className="badge badge--bestseller">
+                                {t("catalog.bestseller")}
+                              </span>
+                            ) : null}
+
+                            {badges.map((badge) => (
+                              <span
+                                key={badge.slug}
+                                className="badge badge--offer"
+                                title={badge.kind}
+                              >
+                                {badge.badge_text}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+
+                    <div className="catalogCard__body">
+                      <Link
+                        to={destination}
+                        className="catalogCard__metaRow"
+                        aria-label={t("catalog.productMetaLabel")}
+                      >
+                        <h2 className="catalogCard__name">{product.name}</h2>
+
+                        <div className="catalogCard__price">
+                          {displayPrice ? `$${displayPrice}` : "Select size"}
+                        </div>
+                      </Link>
+
+                      <div className="catalogCard__actions">
+                        {showSoldOut ? (
+                          <button
+                            type="button"
+                            className="catalogCard__btn catalogCard__btn--notify"
+                          >
+                            {t("catalog.notifyMe")}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="catalogCard__btn"
+                            onClick={() => onAddToCart(product)}
+                            disabled={!firstVariant}
+                          >
+                            {t("catalog.addToCart")}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+
+            {hasMoreCandles ? (
+              <div
+                ref={loadMoreRef}
+                className="catalog__loadMoreTrigger"
+                aria-hidden="true"
+              />
+            ) : null}
+          </>
+        ) : null}
       </div>
     </main>
   );
