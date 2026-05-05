@@ -1,5 +1,11 @@
 import api from "../api/axiosInstance";
 
+import {
+  setAccessToken,
+  setRefreshToken,
+  clearAuthStorage,
+} from "../utils/token";
+
 export type RegisterPayload = {
   email: string;
   password: string;
@@ -53,8 +59,8 @@ export async function loginWithProfile(
 }> {
   const tokens = await login(payload);
 
-  localStorage.setItem("accessToken", tokens.access);
-  localStorage.setItem("refreshToken", tokens.refresh);
+  setAccessToken(tokens.access);
+  setRefreshToken(tokens.refresh);
 
   try {
     const user = await getProfile();
@@ -64,8 +70,7 @@ export async function loginWithProfile(
       user,
     };
   } catch (error) {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    clearAuthStorage();
     throw error;
   }
 }
@@ -83,8 +88,8 @@ export async function registerThenLoginWithProfile(
     password: payload.password,
   });
 
-  localStorage.setItem("accessToken", tokens.access);
-  localStorage.setItem("refreshToken", tokens.refresh);
+  setAccessToken(tokens.access);
+  setRefreshToken(tokens.refresh);
 
   try {
     const user = await getProfile();
@@ -94,8 +99,7 @@ export async function registerThenLoginWithProfile(
       tokens,
     };
   } catch (error) {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    clearAuthStorage();
     throw error;
   }
 }
