@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import {
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import "./CheckoutPaymentBlock.css";
 
 type CheckoutPaymentBlockProps = {
@@ -15,11 +19,12 @@ const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState("");
 
+  const isDisabled = !stripe || !elements || paying;
+
   const onPay = async (): Promise<void> => {
+    if (isDisabled) return;
+
     setPaymentError("");
-
-    if (!stripe || !elements) return;
-
     setPaying(true);
 
     try {
@@ -39,13 +44,16 @@ const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
           result.error.message ?? "Payment failed. Please try again."
         );
       }
+    } catch (err) {
+      console.error("Stripe error:", err);
+      setPaymentError("Unexpected error occurred. Please try again.");
     } finally {
       setPaying(false);
     }
   };
 
   return (
-    <div className="checkoutPay">
+    <div className={`checkoutPay ${paying ? "is-loading" : ""}`}>
       <div className="checkoutPay__elementWrap">
         <PaymentElement />
       </div>
@@ -66,9 +74,13 @@ const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
         type="button"
         className="checkout__button"
         onClick={onPay}
-        disabled={!stripe || !elements || paying}
+        disabled={isDisabled}
       >
-        {paying ? "Processing..." : "Pay now"}
+        {paying ? (
+          <span className="checkoutPay__spinner" />
+        ) : (
+          "Pay now"
+        )}
       </button>
 
       <p className="checkoutPay__note">

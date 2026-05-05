@@ -7,25 +7,26 @@
   gap: 18px;
 }
 
+.checkoutPay.is-loading {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
 /* ======================================================
-   STRIPE CONTAINER (Glass / Premium)
+   STRIPE CONTAINER
    ====================================================== */
 
 .checkoutPay__elementWrap {
   padding: 22px;
-
   border-radius: 20px;
   border: 1px solid var(--app-border);
-
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.7),
-      rgba(255, 255, 255, 0.4)
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.42)
     );
-
   backdrop-filter: blur(12px);
-
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease;
@@ -51,27 +52,21 @@
 }
 
 /* ======================================================
-   PAY BUTTON (Luxury style)
+   PAY BUTTON
    ====================================================== */
 
 .checkoutPay .checkout__button {
   width: 100%;
   min-height: 56px;
-
   border: none;
   border-radius: 40px;
-
   background: linear-gradient(90deg, #000, #2d2d2d);
-
   color: #fff;
-
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-
   cursor: pointer;
-
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease,
@@ -86,6 +81,26 @@
 .checkoutPay .checkout__button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* ======================================================
+   LOADER
+   ====================================================== */
+
+.checkoutPay__spinner {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: checkoutPaySpin 0.65s linear infinite;
+}
+
+@keyframes checkoutPaySpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ======================================================
@@ -104,23 +119,19 @@
    STRIPE ELEMENT FIXES
    ====================================================== */
 
-/* Stripe wrapper */
 .StripeElement,
 .__PrivateStripeElement {
   width: 100%;
 }
 
-/* spacing inside */
 .StripeElement {
   padding: 8px 0;
 }
 
-/* focus */
 .StripeElement--focus {
   outline: none;
 }
 
-/* error */
 .StripeElement--invalid {
   color: #b73a3a;
 }
@@ -136,5 +147,26 @@
 
   .checkoutPay .checkout__button {
     min-height: 52px;
+  }
+}
+
+/* ======================================================
+   REDUCED MOTION
+   ====================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .checkoutPay__elementWrap,
+  .checkoutPay .checkout__button {
+    transition: none;
+  }
+
+  .checkoutPay__elementWrap:hover,
+  .checkoutPay .checkout__button:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .checkoutPay__spinner {
+    animation: none;
   }
 }
