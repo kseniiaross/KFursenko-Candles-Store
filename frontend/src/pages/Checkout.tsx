@@ -1,18 +1,14 @@
 import React, { useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAppSelector } from "../store/hooks";
-import api from "../api/axiosInstance";
-import "../styles/Checkout.css";
-
 import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  PaymentElement,
-  useElements,
-  useStripe,
-} from "@stripe/react-stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 
+import api from "../api/axiosInstance";
+import CheckoutPaymentBlock from "../components/CheckoutPaymentBlock";
+import { useAppSelector } from "../store/hooks";
 import { PROFILE_STORAGE_KEY } from "./Profile";
+
+import "../styles/Checkout.css";
 
 type CartLine = {
   candle_id: number;
@@ -86,76 +82,6 @@ const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY as
   | undefined;
 
 const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
-
-function CheckoutPaymentBlock({ orderId }: { orderId: number }) {
-  const stripe = useStripe();
-  const elements = useElements();
-
-  const [paying, setPaying] = useState(false);
-  const [paymentError, setPaymentError] = useState("");
-
-  const onPay = async (): Promise<void> => {
-    setPaymentError("");
-
-    if (!stripe || !elements) return;
-
-    setPaying(true);
-
-    try {
-      const returnUrl = `${window.location.origin}/payment/success?order=${encodeURIComponent(
-        String(orderId)
-      )}`;
-
-      const result = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: returnUrl,
-        },
-      });
-
-      if (result.error) {
-        setPaymentError(
-          result.error.message ?? "Payment failed. Please try again."
-        );
-      }
-    } finally {
-      setPaying(false);
-    }
-  };
-
-  return (
-    <div className="checkoutPay">
-      <div className="checkoutPay__elementWrap">
-        <PaymentElement />
-      </div>
-
-      <div
-        className="checkout__statusArea"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {paymentError && (
-          <div className="checkout__state checkout__state--error" role="alert">
-            {paymentError}
-          </div>
-        )}
-      </div>
-
-      <button
-        type="button"
-        className="checkout__button"
-        onClick={onPay}
-        disabled={!stripe || !elements || paying}
-      >
-        {paying ? "Processing..." : "Pay now"}
-      </button>
-
-      <p className="checkoutPay__note">
-        We do not store card details. Payments are processed securely by Stripe.
-      </p>
-    </div>
-  );
-}
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();

@@ -1,0 +1,140 @@
+/* ======================================================
+   PAYMENT BLOCK ROOT
+   ====================================================== */
+
+.checkoutPay {
+  display: grid;
+  gap: 18px;
+}
+
+/* ======================================================
+   STRIPE CONTAINER (Glass / Premium)
+   ====================================================== */
+
+.checkoutPay__elementWrap {
+  padding: 22px;
+
+  border-radius: 20px;
+  border: 1px solid var(--app-border);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.7),
+      rgba(255, 255, 255, 0.4)
+    );
+
+  backdrop-filter: blur(12px);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.checkoutPay__elementWrap:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* ======================================================
+   STATUS AREA
+   ====================================================== */
+
+.checkoutPay .checkout__statusArea {
+  min-height: 20px;
+}
+
+.checkoutPay .checkout__state--error {
+  font-size: 0.92rem;
+  color: #b73a3a;
+  letter-spacing: 0.02em;
+}
+
+/* ======================================================
+   PAY BUTTON (Luxury style)
+   ====================================================== */
+
+.checkoutPay .checkout__button {
+  width: 100%;
+  min-height: 56px;
+
+  border: none;
+  border-radius: 40px;
+
+  background: linear-gradient(90deg, #000, #2d2d2d);
+
+  color: #fff;
+
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.checkoutPay .checkout__button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+
+.checkoutPay .checkout__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ======================================================
+   NOTE TEXT
+   ====================================================== */
+
+.checkoutPay__note {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--app-text-muted);
+}
+
+/* ======================================================
+   STRIPE ELEMENT FIXES
+   ====================================================== */
+
+/* Stripe wrapper */
+.StripeElement,
+.__PrivateStripeElement {
+  width: 100%;
+}
+
+/* spacing inside */
+.StripeElement {
+  padding: 8px 0;
+}
+
+/* focus */
+.StripeElement--focus {
+  outline: none;
+}
+
+/* error */
+.StripeElement--invalid {
+  color: #b73a3a;
+}
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media (max-width: 600px) {
+  .checkoutPay__elementWrap {
+    padding: 18px;
+  }
+
+  .checkoutPay .checkout__button {
+    min-height: 52px;
+  }
+}
