@@ -90,10 +90,18 @@ class Offer(models.Model):
     kind = models.CharField(max_length=30, choices=Kind.choices)
 
     discount_percent = models.PositiveSmallIntegerField(null=True, blank=True)
-    discounted_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    discounted_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
 
     priority = models.PositiveSmallIntegerField(default=100)
     is_active = models.BooleanField(default=True)
+
+    # Allows one offer/badge to apply to all candles.
+    apply_globally = models.BooleanField(default=False)
 
     new_shopper_only = models.BooleanField(default=False)
     new_shopper_days_active = models.PositiveSmallIntegerField(default=60)
@@ -133,7 +141,16 @@ class Offer(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title) or "offer"
+            base_slug = slugify(self.title) or "offer"
+            slug = base_slug
+            counter = 2
+
+            while Offer.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
+
         if not self.badge_text:
             if self.kind == self.Kind.DISCOUNT and self.discount_percent:
                 self.badge_text = f"-{self.discount_percent}%"
@@ -143,6 +160,8 @@ class Offer(models.Model):
                 self.badge_text = "Buy 1 get 2"
             elif self.kind == self.Kind.HOLIDAY:
                 self.badge_text = "Holiday"
+            elif self.kind == self.Kind.LOYALTY:
+                self.badge_text = "Loyalty"
 
         super().save(*args, **kwargs)
 
@@ -151,7 +170,11 @@ class Offer(models.Model):
 # CANDLE
 # ======================================================
 class Candle(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="candles")
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name="candles",
+    )
 
     collections = models.ManyToManyField(Collection, blank=True)
     offers = models.ManyToManyField(Offer, blank=True)
@@ -163,7 +186,12 @@ class Candle(models.Model):
 
     image = CloudinaryField("image", blank=True, null=True)
 
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
     stock_qty = models.PositiveIntegerField(default=0)
 
     is_sold_out = models.BooleanField(default=False)
@@ -176,7 +204,15 @@ class Candle(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name) or "candle"
+            base_slug = slugify(self.name) or "candle"
+            slug = base_slug
+            counter = 2
+
+            while Candle.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
 
         super().save(*args, **kwargs)
 
@@ -188,7 +224,11 @@ class Candle(models.Model):
 # VARIANTS
 # ======================================================
 class CandleVariant(models.Model):
-    candle = models.ForeignKey(Candle, on_delete=models.CASCADE, related_name="variants")
+    candle = models.ForeignKey(
+        Candle,
+        on_delete=models.CASCADE,
+        related_name="variants",
+    )
 
     size = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -207,7 +247,11 @@ class CandleVariant(models.Model):
 # IMAGES
 # ======================================================
 class CandleImage(models.Model):
-    candle = models.ForeignKey(Candle, on_delete=models.CASCADE, related_name="images")
+    candle = models.ForeignKey(
+        Candle,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
     image = CloudinaryField("image")
     sort_order = models.PositiveSmallIntegerField(default=0)
 
@@ -234,7 +278,11 @@ class GalleryItem(models.Model):
     slug = models.SlugField(max_length=200, unique=True, blank=True)
 
     media_type = models.CharField(max_length=20, choices=MediaType.choices)
-    content_type = models.CharField(max_length=20, choices=ContentType.choices, default=ContentType.GALLERY)
+    content_type = models.CharField(
+        max_length=20,
+        choices=ContentType.choices,
+        default=ContentType.GALLERY,
+    )
 
     media = CloudinaryField("media", resource_type="auto")
     preview_image = CloudinaryField("preview_image", blank=True, null=True)
@@ -254,7 +302,7 @@ class GalleryItem(models.Model):
             slug = base_slug
             counter = 2
 
-            while GalleryItem.objects.filter(slug=slug).exists():
+            while GalleryItem.objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
 
