@@ -82,6 +82,10 @@ const Cart: React.FC = () => {
                           src={item.image}
                           alt={name}
                           className="cartItem__image"
+                          width="180"
+                          height="210"
+                          loading="eager"
+                          decoding="async"
                         />
                       ) : (
                         <div className="cartItem__image cartItem__image--empty" />
