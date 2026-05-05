@@ -355,6 +355,10 @@ const Checkout: React.FC = () => {
                           src={item.image}
                           alt={item.name ?? `Candle ${item.candle_id}`}
                           className="checkoutItem__image"
+                          width="140"
+                          height="160"
+                          loading="eager"
+                          decoding="async"
                         />
                       ) : (
                         <div
