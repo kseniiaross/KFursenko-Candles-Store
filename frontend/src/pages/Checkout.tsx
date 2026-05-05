@@ -140,12 +140,11 @@ const Checkout: React.FC = () => {
 
   const canPreparePayment =
     items.length > 0 &&
-    form.full_name.trim() !== "" &&
-    form.address_line1.trim() !== "" &&
-    form.city.trim() !== "" &&
-    form.state.trim() !== "" &&
-    form.postal_code.trim() !== "" &&
-    form.country.trim() !== "";
+    form.full_name.trim().length > 0 &&
+    form.address_line1.trim().length > 0 &&
+    form.city.trim().length > 0 &&
+    form.state.trim().length > 0 &&
+    form.postal_code.trim().length > 0;
 
   const showPayment = Boolean(clientSecret) && orderId !== null;
 
@@ -184,7 +183,7 @@ const Checkout: React.FC = () => {
           city: form.city.trim(),
           state: form.state.trim(),
           postal_code: form.postal_code.trim(),
-          country: form.country.trim().toUpperCase(),
+          country: (form.country || "US").trim().toUpperCase(),
         },
         shipping_amount: SHIPPING_AMOUNT,
       });
@@ -241,8 +240,7 @@ const Checkout: React.FC = () => {
           </h1>
 
           <p className="checkout__subtitle">
-            Review your items, enter your shipping details, and continue to
-            secure payment.
+            Review your items, enter your shipping details, and continue to secure payment.
           </p>
         </header>
 
@@ -313,9 +311,7 @@ const Checkout: React.FC = () => {
                           <h3 className="checkoutItem__name">{name}</h3>
 
                           {item.size && (
-                            <p className="checkoutItem__meta">
-                              Size: {item.size}
-                            </p>
+                            <p className="checkoutItem__meta">Size: {item.size}</p>
                           )}
 
                           <p className="checkoutItem__meta">

@@ -39,7 +39,9 @@ const CatalogDetail: React.FC = () => {
         setItem(data);
         setActiveImg(data.image ?? "");
 
-        const activeVariants = (data.variants ?? []).filter((v) => v.is_active);
+        const activeVariants = (data.variants ?? []).filter(
+          (v) => v.is_active
+        );
 
         if (activeVariants.length > 0) {
           setVariant(activeVariants[0]);
@@ -82,53 +84,51 @@ const CatalogDetail: React.FC = () => {
     return Number(variant.price) || 0;
   }, [variant]);
 
-  const addLocalCartItem = (): void => {
-    if (!item || !variant) return;
+  const buildCartItem = () => {
+    if (!item || !variant) return null;
 
-    dispatch(
-      addToCart({
-        variant_id: Number(variant.id),
-        candle_id: Number(item.id),
-        name: item.name,
-        price: Number(variant.price) || 0,
-        image: item.image ?? undefined,
-        size: variant.size,
-        quantity: 1,
-        isGift: false,
-      })
-    );
+    const variantId = Number(variant.id);
+    const candleId = Number(item.id);
+
+    if (!variantId || !candleId) return null;
+
+    return {
+      variant_id: variantId,
+      candle_id: candleId,
+      name: item.name,
+      price: Number(variant.price) || 0,
+      image: item.image ?? undefined,
+      size: variant.size,
+      quantity: 1,
+      isGift: false,
+    };
   };
 
   const onAddToCart = async (): Promise<void> => {
     if (!item || !variant || adding) return;
 
-    const variantId = Number(variant.id);
+    const cartItem = buildCartItem();
 
-    if (!variantId) return;
+    if (!cartItem) return;
 
     setAdding(true);
 
+    dispatch(addToCart(cartItem));
+
     try {
-      if (!isLoggedIn) {
-        addLocalCartItem();
-        return;
-      }
+      if (!isLoggedIn) return;
 
       const serverItems = await addToCartApi({
-        variant_id: variantId,
+        variant_id: cartItem.variant_id,
         quantity: 1,
         is_gift: false,
       });
 
       if (Array.isArray(serverItems) && serverItems.length > 0) {
         dispatch(setCart(serverItems));
-        return;
       }
-
-      addLocalCartItem();
     } catch (error) {
-      console.error("Failed to add item to cart:", error);
-      addLocalCartItem();
+      console.error("Failed to sync cart with backend:", error);
     } finally {
       setAdding(false);
     }

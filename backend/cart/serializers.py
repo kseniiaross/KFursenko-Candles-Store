@@ -61,6 +61,11 @@ class CartItemSerializer(serializers.ModelSerializer):
             "in_stock",
         )
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["variant_id"] = instance.variant_id
+        return data
+
     def get_image(self, obj):
         return build_cloudinary_url(obj.variant.candle.image)
 
@@ -86,6 +91,11 @@ class MergeCartItemInputSerializer(serializers.Serializer):
     variant_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1, max_value=999)
     is_gift = serializers.BooleanField(required=False, default=False)
+
+    def validate_variant_id(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("variant_id must be positive.")
+        return value
 
 
 class MergeCartSerializer(serializers.Serializer):

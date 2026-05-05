@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import axios from "axios";
 
 import { getMyCart, mergeCart } from "../api/cart";
@@ -14,8 +14,13 @@ import { getAccessToken } from "../utils/token";
 export function useHydrateCart(): void {
   const dispatch = useAppDispatch();
   const isLoggedIn = useAppSelector((state) => Boolean(state.auth?.isLoggedIn));
+  const hasHydrated = useRef(false);
 
   useEffect(() => {
+    if (hasHydrated.current) return;
+
+    hasHydrated.current = true;
+
     let cancelled = false;
 
     async function hydrate(): Promise<void> {
@@ -62,20 +67,20 @@ export function useHydrateCart(): void {
               }
             }
           }
-        } else if (guestItems.length > 0) {
-          clearGuestCartStorage();
         }
 
         const serverItems = await getMyCart();
 
-        if (!cancelled) {
+        if (!cancelled && serverItems.length > 0) {
           dispatch(setCart(serverItems));
+        } else if (!cancelled && validGuestItems.length > 0) {
+          dispatch(setCart(validGuestItems));
         }
       } catch (error: unknown) {
         console.error("Failed to hydrate cart:", error);
 
         if (!cancelled) {
-          dispatch(setCart([]));
+          dispatch(setCart(validGuestItems.length > 0 ? validGuestItems : guestItems));
         }
       }
     }

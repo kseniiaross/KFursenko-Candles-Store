@@ -21,7 +21,6 @@
   content: "";
   position: fixed;
   inset: 0;
-  background: url("../assets/images/login-bg.jpg") center / cover no-repeat;
   filter: blur(14px) brightness(1.04);
   transform: scale(1.05);
   z-index: -2;
