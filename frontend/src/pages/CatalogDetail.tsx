@@ -28,17 +28,22 @@ const CatalogDetail: React.FC = () => {
   useEffect(() => {
     let active = true;
 
-    async function load() {
+    async function load(): Promise<void> {
       if (!slug) return;
 
       try {
         const data = await getCandleBySlug(slug);
+
         if (!active) return;
 
         setItem(data);
         setActiveImg(data.image ?? "");
 
-        if (data.variants && data.variants.length > 0) {
+        const activeVariants = (data.variants ?? []).filter((v) => v.is_active);
+
+        if (activeVariants.length > 0) {
+          setVariant(activeVariants[0]);
+        } else if (data.variants && data.variants.length > 0) {
           setVariant(data.variants[0]);
         } else {
           setVariant(null);
@@ -46,14 +51,18 @@ const CatalogDetail: React.FC = () => {
 
         try {
           const siblings = await getCollectionScentsBySlug(slug);
+
           if (!active) return;
+
           setScents(siblings);
         } catch {
           if (!active) return;
+
           setScents([]);
         }
       } catch {
         if (!active) return;
+
         setItem(null);
         setActiveImg("");
         setVariant(null);
@@ -73,38 +82,53 @@ const CatalogDetail: React.FC = () => {
     return Number(variant.price) || 0;
   }, [variant]);
 
+  const addLocalCartItem = (): void => {
+    if (!item || !variant) return;
+
+    dispatch(
+      addToCart({
+        variant_id: Number(variant.id),
+        candle_id: Number(item.id),
+        name: item.name,
+        price: Number(variant.price) || 0,
+        image: item.image ?? undefined,
+        size: variant.size,
+        quantity: 1,
+        isGift: false,
+      })
+    );
+  };
+
   const onAddToCart = async (): Promise<void> => {
     if (!item || !variant || adding) return;
 
+    const variantId = Number(variant.id);
+
+    if (!variantId) return;
+
+    setAdding(true);
+
     try {
-      setAdding(true);
-
       if (!isLoggedIn) {
-        dispatch(
-          addToCart({
-            variant_id: variant.id,
-            candle_id: item.id,
-            name: item.name,
-            price: Number(variant.price) || 0,
-            image: item.image ?? undefined,
-            size: variant.size,
-            quantity: 1,
-            isGift: false,
-          })
-        );
-
+        addLocalCartItem();
         return;
       }
 
-      const items = await addToCartApi({
-        variant_id: variant.id,
+      const serverItems = await addToCartApi({
+        variant_id: variantId,
         quantity: 1,
         is_gift: false,
       });
 
-      dispatch(setCart(items));
+      if (Array.isArray(serverItems) && serverItems.length > 0) {
+        dispatch(setCart(serverItems));
+        return;
+      }
+
+      addLocalCartItem();
     } catch (error) {
       console.error("Failed to add item to cart:", error);
+      addLocalCartItem();
     } finally {
       setAdding(false);
     }
@@ -116,6 +140,8 @@ const CatalogDetail: React.FC = () => {
     item.image ?? "",
     ...(item.images ?? []).map((img) => img.image),
   ].filter(Boolean);
+
+  const variants = item.variants ?? [];
 
   return (
     <main className="catalogDetail" aria-label={t("catalogDetail.pageLabel")}>
@@ -192,12 +218,12 @@ const CatalogDetail: React.FC = () => {
               </div>
             )}
 
-            {item.variants && item.variants.length > 0 && (
+            {variants.length > 0 && (
               <div className="catalogDetail__sizeBlock">
                 <span className="catalogDetail__sizeLabel">Size</span>
 
                 <div className="catalogDetail__sizeOptions">
-                  {item.variants.map((v) => (
+                  {variants.map((v) => (
                     <button
                       key={v.id}
                       type="button"
