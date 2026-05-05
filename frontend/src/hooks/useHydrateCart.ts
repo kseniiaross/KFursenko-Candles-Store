@@ -7,6 +7,7 @@ import {
   getGuestCartStorage,
   setCart,
 } from "../store/cartSlice";
+import type { CartLine } from "../store/cartSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { getAccessToken } from "../utils/token";
 
@@ -29,12 +30,12 @@ export function useHydrateCart(): void {
         return;
       }
 
-      const validGuestItems = guestItems.filter((item) => {
+      const validGuestItems: CartLine[] = guestItems.filter((item: CartLine) => {
         return (
-          Number.isInteger(item.variant_id) &&
-          item.variant_id > 0 &&
-          Number.isInteger(item.quantity) &&
-          item.quantity > 0
+          Number.isInteger(Number(item.variant_id)) &&
+          Number(item.variant_id) > 0 &&
+          Number.isInteger(Number(item.quantity)) &&
+          Number(item.quantity) > 0
         );
       });
 
@@ -42,15 +43,15 @@ export function useHydrateCart(): void {
         if (validGuestItems.length > 0) {
           try {
             await mergeCart({
-              items: validGuestItems.map((item) => ({
-                variant_id: item.variant_id,
-                quantity: item.quantity,
+              items: validGuestItems.map((item: CartLine) => ({
+                variant_id: Number(item.variant_id),
+                quantity: Number(item.quantity),
                 is_gift: Boolean(item.isGift),
               })),
             });
 
             clearGuestCartStorage();
-          } catch (mergeError) {
+          } catch (mergeError: unknown) {
             console.error("Failed to merge guest cart:", mergeError);
 
             if (axios.isAxiosError(mergeError)) {
@@ -70,7 +71,7 @@ export function useHydrateCart(): void {
         if (!cancelled) {
           dispatch(setCart(serverItems));
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Failed to hydrate cart:", error);
 
         if (!cancelled) {
