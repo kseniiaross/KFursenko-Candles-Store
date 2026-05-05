@@ -10,6 +10,10 @@ import { PROFILE_STORAGE_KEY } from "./Profile";
 
 import "../styles/Checkout.css";
 
+/* ======================================================
+   TYPES
+   ====================================================== */
+
 type CartLine = {
   candle_id: number;
   variant_id?: number;
@@ -42,6 +46,10 @@ type SavedProfile = {
   country?: string;
 };
 
+/* ======================================================
+   HELPERS
+   ====================================================== */
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -57,31 +65,31 @@ function loadProfileFromStorage(): SavedProfile | null {
   try {
     const raw = sessionStorage.getItem(PROFILE_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SavedProfile;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
 function getErrorMessage(error: unknown): string {
-  if (isRecord(error)) {
-    const response = error.response;
-
-    if (isRecord(response) && response.data) {
-      return JSON.stringify(response.data);
-    }
+  if (isRecord(error) && isRecord(error.response) && error.response.data) {
+    return JSON.stringify(error.response.data);
   }
-
   return "Could not prepare payment. Please try again.";
 }
 
+/* ======================================================
+   CONSTANTS
+   ====================================================== */
+
 const SHIPPING_AMOUNT = 15;
 
-const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY as
-  | string
-  | undefined;
-
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
+
+/* ======================================================
+   COMPONENT
+   ====================================================== */
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -89,12 +97,9 @@ const Checkout: React.FC = () => {
   const headingId = useId();
   const summaryId = useId();
   const shippingId = useId();
-  const statusId = useId();
 
-  const isLoggedIn = useAppSelector((state) => Boolean(state.auth?.isLoggedIn));
-  const cartItems = useAppSelector(
-    (state) => (state.cart.items ?? []) as CartLine[]
-  );
+  const isLoggedIn = useAppSelector((s) => Boolean(s.auth?.isLoggedIn));
+  const cartItems = useAppSelector((s) => (s.cart.items ?? []) as CartLine[]);
 
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
@@ -117,139 +122,127 @@ const Checkout: React.FC = () => {
     country: savedProfile?.country ?? "US",
   });
 
+  /* ======================================================
+     AUTH REDIRECT
+     ====================================================== */
+
   useEffect(() => {
     if (!isLoggedIn) {
-      navigate(`/login-choice?next=${encodeURIComponent("/checkout")}`, {
-        replace: true,
-      });
+      navigate(`/login-choice?next=/checkout`, { replace: true });
     }
   }, [isLoggedIn, navigate]);
 
-  const subtotal = useMemo(() => {
-    return cartItems.reduce(
-      (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
-      0
-    );
-  }, [cartItems]);
+  /* ======================================================
+     NORMALIZED CART
+     ====================================================== */
 
-  const itemCount = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  }, [cartItems]);
-
-  const hasGiftItems = useMemo(() => {
-    return cartItems.some((item) => Boolean(item.isGift));
+  const normalizedCartItems = useMemo(() => {
+    return cartItems.map((item) => ({
+      ...item,
+      variant_id:
+        typeof item.variant_id === "number"
+          ? item.variant_id
+          : Number(item.variant_id),
+      quantity: Number(item.quantity) || 1,
+    }));
   }, [cartItems]);
 
   const hasValidCartItems = useMemo(() => {
-    return cartItems.every(
-      (item) =>
-        typeof item.variant_id === "number" &&
-        item.variant_id > 0 &&
-        item.quantity > 0
+    return normalizedCartItems.every(
+      (item) => item.variant_id && item.variant_id > 0 && item.quantity > 0
     );
-  }, [cartItems]);
+  }, [normalizedCartItems]);
+
+  /* ======================================================
+     CALCULATIONS
+     ====================================================== */
+
+  const subtotal = useMemo(() => {
+    return normalizedCartItems.reduce(
+      (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
+      0
+    );
+  }, [normalizedCartItems]);
+
+  const itemCount = useMemo(() => {
+    return normalizedCartItems.reduce((sum, item) => sum + item.quantity, 0);
+  }, [normalizedCartItems]);
+
+  const hasGiftItems = useMemo(() => {
+    return normalizedCartItems.some((item) => item.isGift);
+  }, [normalizedCartItems]);
+
+  /* ======================================================
+     FORM
+     ====================================================== */
 
   const onFieldChange =
     (key: keyof ShippingForm) =>
-    (event: React.ChangeEvent<HTMLInputElement>): void => {
-      setForm((prev) => ({
-        ...prev,
-        [key]: event.target.value,
-      }));
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
     };
 
   const canPreparePayment =
-    cartItems.length > 0 &&
+    normalizedCartItems.length > 0 &&
     hasValidCartItems &&
-    form.full_name.trim().length > 0 &&
-    form.address_line1.trim().length > 0 &&
-    form.city.trim().length > 0 &&
-    form.state.trim().length > 0 &&
-    form.postal_code.trim().length > 0 &&
-    form.country.trim().length > 0;
+    form.full_name.trim() !== "" &&
+    form.address_line1.trim() !== "" &&
+    form.city.trim() !== "" &&
+    form.state.trim() !== "" &&
+    form.postal_code.trim() !== "" &&
+    form.country.trim() !== "";
 
-  const showPayment = Boolean(clientSecret) && orderId !== null;
+  const showPayment = Boolean(clientSecret && orderId);
 
   const stripeOptions = useMemo(() => {
-    if (!clientSecret) return undefined;
-
-    return {
-      clientSecret,
-      appearance: {
-        theme: "stripe" as const,
-      },
-    };
+    if (!clientSecret) return;
+    return { clientSecret, appearance: { theme: "stripe" as const } };
   }, [clientSecret]);
 
-  const createOrderAndIntent = async (): Promise<void> => {
+  /* ======================================================
+     CREATE ORDER
+     ====================================================== */
+
+  const createOrderAndIntent = async () => {
     if (!canPreparePayment) return;
 
     setLoading(true);
     setErrorMsg("");
-    setClientSecret("");
-    setOrderId(null);
-    setTax(null);
-    setTotal(null);
 
     try {
-      const orderPayload = {
-        items: cartItems.map((item) => ({
-          variant_id: item.variant_id,
-          quantity: item.quantity,
-          is_gift: Boolean(item.isGift),
+      const orderResponse = await api.post("/orders/", {
+        items: normalizedCartItems.map((i) => ({
+          variant_id: i.variant_id,
+          quantity: i.quantity,
+          is_gift: i.isGift,
         })),
         shipping: {
-          full_name: form.full_name.trim(),
-          line1: form.address_line1.trim(),
-          line2: form.address_line2.trim(),
-          city: form.city.trim(),
-          state: form.state.trim(),
-          postal_code: form.postal_code.trim(),
-          country: form.country.trim().toUpperCase(),
+          full_name: form.full_name,
+          line1: form.address_line1,
+          line2: form.address_line2,
+          city: form.city,
+          state: form.state,
+          postal_code: form.postal_code,
+          country: form.country.toUpperCase(),
         },
         shipping_amount: SHIPPING_AMOUNT,
-      };
-
-      const orderResponse = await api.post("/orders/", orderPayload);
-
-      const createdOrderId =
-        isRecord(orderResponse.data) && typeof orderResponse.data.id === "number"
-          ? orderResponse.data.id
-          : null;
-
-      if (!createdOrderId) {
-        throw new Error("Order id was not returned from backend.");
-      }
-
-      setOrderId(createdOrderId);
-
-      const intentResponse = await api.post("/orders/create-intent/", {
-        order_id: createdOrderId,
       });
 
-      const clientSecretValue = isRecord(intentResponse.data)
-        ? intentResponse.data.client_secret
-        : null;
+      const id = orderResponse.data?.id;
+      if (!id) throw new Error("No order id");
 
-      if (typeof clientSecretValue !== "string" || !clientSecretValue.trim()) {
-        throw new Error("Invalid client_secret received from backend.");
-      }
+      setOrderId(id);
 
-      setClientSecret(clientSecretValue);
+      const intent = await api.post("/orders/create-intent/", {
+        order_id: id,
+      });
 
-      const taxAmount = isRecord(intentResponse.data)
-        ? intentResponse.data.tax_amount
-        : null;
-
-      const totalAmount = isRecord(intentResponse.data)
-        ? intentResponse.data.total_amount
-        : null;
-
-      if (typeof taxAmount === "number") setTax(taxAmount);
-      if (typeof totalAmount === "number") setTotal(totalAmount);
-    } catch (error) {
-      console.error("Checkout order error:", error);
-      setErrorMsg(getErrorMessage(error));
+      setClientSecret(intent.data.client_secret);
+      setTax(intent.data.tax_amount);
+      setTotal(intent.data.total_amount);
+    } catch (e) {
+      console.error(e);
+      setErrorMsg(getErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -257,331 +250,169 @@ const Checkout: React.FC = () => {
 
   if (!isLoggedIn) return null;
 
+  /* ======================================================
+     UI
+     ====================================================== */
+
   return (
     <main className="checkout" aria-labelledby={headingId}>
       <div className="checkout__inner">
-        <div className="checkout__backWrap">
-          <Link to="/cart" className="checkout__backLink">
-            ← Go back to shopping cart
-          </Link>
-        </div>
+        <Link to="/cart" className="checkout__backLink">
+          ← Back to cart
+        </Link>
 
-        <header className="checkout__header">
-          <h1 id={headingId} className="checkout__title">
-            Place your order
-          </h1>
+        <h1 id={headingId} className="checkout__title">
+          Place your order
+        </h1>
 
-          <p className="checkout__subtitle">
-            Review your items, enter your shipping details, and continue to secure
-            payment.
-          </p>
-        </header>
-
-        <div
-          className="checkout__statusArea checkout__statusArea--page"
-          id={statusId}
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {orderId !== null && (
-            <div className="checkout__state">Order #{orderId} created.</div>
-          )}
-
-          {clientSecret && (
-            <div className="checkout__state">Payment is ready.</div>
-          )}
-
-          {errorMsg && (
-            <div className="checkout__state checkout__state--error" role="alert">
-              {errorMsg}
-            </div>
-          )}
-        </div>
+        {errorMsg && (
+          <div className="checkout__state checkout__state--error">
+            {errorMsg}
+          </div>
+        )}
 
         <div className="checkout__grid">
+          {/* SUMMARY */}
           <section className="checkout__summary" aria-labelledby={summaryId}>
             <h2 id={summaryId} className="checkout__sectionTitle">
               Order summary
             </h2>
 
-            {cartItems.length === 0 ? (
-              <div className="checkout__empty">
-                <p className="checkout__emptyText">Your cart is empty.</p>
-
-                <Link to="/catalog" className="checkout__inlineLink">
-                  Go to catalog
-                </Link>
-              </div>
-            ) : (
-              <>
-                <ul className="checkout__items" role="list">
-                  {cartItems.map((item) => (
-                    <li
-                      key={`${item.variant_id ?? item.candle_id}-${
-                        item.size ?? "default"
-                      }`}
-                      className="checkoutItem"
-                    >
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.name ?? `Candle ${item.candle_id}`}
-                          className="checkoutItem__image"
-                          width="140"
-                          height="160"
-                          loading="eager"
-                          decoding="async"
-                        />
-                      ) : (
-                        <div
-                          className="checkoutItem__image checkoutItem__image--empty"
-                          aria-hidden="true"
-                        />
-                      )}
-
-                      <div className="checkoutItem__info">
-                        <h3 className="checkoutItem__name">
-                          {item.name ?? `Candle #${item.candle_id}`}
-                        </h3>
-
-                        {item.size && (
-                          <p className="checkoutItem__meta">Size: {item.size}</p>
-                        )}
-
-                        <p className="checkoutItem__meta">
-                          Quantity: {item.quantity}
-                        </p>
-
-                        {item.isGift && (
-                          <p className="checkoutItem__meta">
-                            Gift option: Yes — Free
-                          </p>
-                        )}
-
-                        {!item.variant_id && (
-                          <p className="checkoutItem__meta">
-                            This item needs to be added again before checkout.
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="checkoutItem__lineTotal">
-                        {money((Number(item.price) || 0) * item.quantity)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="checkout__totals" aria-label="Order totals">
-                  <div className="checkout__totalRow">
-                    <span>Items</span>
-                    <span>{itemCount}</span>
-                  </div>
-
-                  <div className="checkout__totalRow">
-                    <span>Subtotal</span>
-                    <span>{money(subtotal)}</span>
-                  </div>
-
-                  {hasGiftItems && (
-                    <div className="checkout__totalRow">
-                      <span>Gift wrapping</span>
-                      <span>Free</span>
-                    </div>
+            <ul className="checkout__items">
+              {normalizedCartItems.map((item) => (
+                <li key={item.variant_id} className="checkoutItem">
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="checkoutItem__image"
+                    />
                   )}
 
-                  <div className="checkout__totalRow">
-                    <span>Shipping</span>
-                    <span>{money(SHIPPING_AMOUNT)}</span>
+                  <div className="checkoutItem__info">
+                    <h3 className="checkoutItem__name">{item.name}</h3>
+
+                    {item.size && (
+                      <p className="checkoutItem__meta">
+                        Size: {item.size}
+                      </p>
+                    )}
+
+                    <p className="checkoutItem__meta">
+                      Quantity: {item.quantity}
+                    </p>
+
+                    {item.isGift && (
+                      <p className="checkoutItem__meta">
+                        Gift option: Yes — Free
+                      </p>
+                    )}
                   </div>
 
-                  <div className="checkout__totalRow">
-                    <span>Tax</span>
-                    <span>{tax === null ? "—" : money(tax)}</span>
+                  <div className="checkoutItem__lineTotal">
+                    {money((Number(item.price) || 0) * item.quantity)}
                   </div>
+                </li>
+              ))}
+            </ul>
 
-                  <div className="checkout__totalRow checkout__totalRow--grand">
-                    <span>Total</span>
-                    <span>
-                      {total === null
-                        ? money(subtotal + SHIPPING_AMOUNT)
-                        : money(total)}
-                    </span>
-                  </div>
+            <div className="checkout__totals">
+              <div className="checkout__totalRow">
+                <span>Items</span>
+                <span>{itemCount}</span>
+              </div>
+
+              <div className="checkout__totalRow">
+                <span>Subtotal</span>
+                <span>{money(subtotal)}</span>
+              </div>
+
+              {hasGiftItems && (
+                <div className="checkout__totalRow">
+                  <span>Gift wrapping</span>
+                  <span>Free</span>
                 </div>
+              )}
 
-                {hasGiftItems && (
-                  <p className="checkout__giftNote">
-                    Gift wrapping is complimentary. No extra fee is charged.
-                  </p>
-                )}
-              </>
-            )}
+              <div className="checkout__totalRow">
+                <span>Shipping</span>
+                <span>{money(SHIPPING_AMOUNT)}</span>
+              </div>
+
+              <div className="checkout__totalRow">
+                <span>Tax</span>
+                <span>{tax === null ? "—" : money(tax)}</span>
+              </div>
+
+              <div className="checkout__totalRow checkout__totalRow--grand">
+                <span>Total</span>
+                <span>
+                  {total === null
+                    ? money(subtotal + SHIPPING_AMOUNT)
+                    : money(total)}
+                </span>
+              </div>
+            </div>
           </section>
 
+          {/* FORM / PAYMENT */}
           <section className="checkout__formPanel" aria-labelledby={shippingId}>
             <h2 id={shippingId} className="checkout__sectionTitle">
               {showPayment ? "Payment" : "Shipping details"}
             </h2>
 
-            {savedProfile?.addressLine1 && !showPayment && (
-              <p className="checkout__prefillNote" aria-live="polite">
-                ✓ We pre-filled your shipping address from your profile.
-              </p>
-            )}
-
             {!showPayment ? (
               <form
                 className="checkoutForm"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void createOrderAndIntent();
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  createOrderAndIntent();
                 }}
-                noValidate
               >
-                <div className="checkoutForm__group">
-                  <label className="checkoutForm__label" htmlFor="checkout-full-name">
-                    Full name
-                  </label>
+                <input
+                  className="checkoutForm__input"
+                  placeholder="Full name"
+                  value={form.full_name}
+                  onChange={onFieldChange("full_name")}
+                />
 
-                  <input
-                    id="checkout-full-name"
-                    className="checkoutForm__input"
-                    type="text"
-                    autoComplete="name"
-                    value={form.full_name}
-                    onChange={onFieldChange("full_name")}
-                    disabled={loading}
-                    required
-                    aria-required="true"
-                  />
-                </div>
+                <input
+                  className="checkoutForm__input"
+                  placeholder="Address"
+                  value={form.address_line1}
+                  onChange={onFieldChange("address_line1")}
+                />
 
-                <div className="checkoutForm__group">
-                  <label className="checkoutForm__label" htmlFor="checkout-address-1">
-                    Street address
-                  </label>
+                <input
+                  className="checkoutForm__input"
+                  placeholder="City"
+                  value={form.city}
+                  onChange={onFieldChange("city")}
+                />
 
-                  <input
-                    id="checkout-address-1"
-                    className="checkoutForm__input"
-                    type="text"
-                    autoComplete="address-line1"
-                    value={form.address_line1}
-                    onChange={onFieldChange("address_line1")}
-                    disabled={loading}
-                    required
-                    aria-required="true"
-                  />
-                </div>
+                <input
+                  className="checkoutForm__input"
+                  placeholder="State"
+                  value={form.state}
+                  onChange={onFieldChange("state")}
+                />
 
-                <div className="checkoutForm__row">
-                  <div className="checkoutForm__group">
-                    <label
-                      className="checkoutForm__label"
-                      htmlFor="checkout-address-2"
-                    >
-                      Apt / unit
-                    </label>
-
-                    <input
-                      id="checkout-address-2"
-                      className="checkoutForm__input"
-                      type="text"
-                      autoComplete="address-line2"
-                      value={form.address_line2}
-                      onChange={onFieldChange("address_line2")}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="checkoutForm__group">
-                    <label className="checkoutForm__label" htmlFor="checkout-city">
-                      City
-                    </label>
-
-                    <input
-                      id="checkout-city"
-                      className="checkoutForm__input"
-                      type="text"
-                      autoComplete="address-level2"
-                      value={form.city}
-                      onChange={onFieldChange("city")}
-                      disabled={loading}
-                      required
-                      aria-required="true"
-                    />
-                  </div>
-                </div>
-
-                <div className="checkoutForm__row">
-                  <div className="checkoutForm__group">
-                    <label className="checkoutForm__label" htmlFor="checkout-state">
-                      State
-                    </label>
-
-                    <input
-                      id="checkout-state"
-                      className="checkoutForm__input"
-                      type="text"
-                      autoComplete="address-level1"
-                      value={form.state}
-                      onChange={onFieldChange("state")}
-                      disabled={loading}
-                      required
-                      aria-required="true"
-                    />
-                  </div>
-
-                  <div className="checkoutForm__group">
-                    <label
-                      className="checkoutForm__label"
-                      htmlFor="checkout-postal-code"
-                    >
-                      ZIP code
-                    </label>
-
-                    <input
-                      id="checkout-postal-code"
-                      className="checkoutForm__input"
-                      type="text"
-                      autoComplete="postal-code"
-                      inputMode="text"
-                      value={form.postal_code}
-                      onChange={onFieldChange("postal_code")}
-                      disabled={loading}
-                      required
-                      aria-required="true"
-                    />
-                  </div>
-                </div>
-
-                <div className="checkoutForm__group">
-                  <label className="checkoutForm__label" htmlFor="checkout-country">
-                    Country (2-letter code)
-                  </label>
-
-                  <input
-                    id="checkout-country"
-                    className="checkoutForm__input"
-                    type="text"
-                    autoComplete="country"
-                    value={form.country}
-                    onChange={onFieldChange("country")}
-                    disabled={loading}
-                    required
-                    aria-required="true"
-                    maxLength={2}
-                  />
-                </div>
+                <input
+                  className="checkoutForm__input"
+                  placeholder="ZIP"
+                  value={form.postal_code}
+                  onChange={onFieldChange("postal_code")}
+                />
 
                 <button
-                  type="submit"
                   className="checkout__button"
-                  disabled={loading || !canPreparePayment || cartItems.length === 0}
-                  aria-disabled={loading || !canPreparePayment}
+                  disabled={
+                    loading ||
+                    !canPreparePayment ||
+                    normalizedCartItems.length === 0
+                  }
                 >
-                  {loading ? "Preparing payment..." : "Continue to payment"}
+                  {loading ? "Preparing..." : "Continue to payment"}
                 </button>
               </form>
             ) : stripePromise && stripeOptions ? (
@@ -589,8 +420,8 @@ const Checkout: React.FC = () => {
                 <CheckoutPaymentBlock orderId={orderId!} />
               </Elements>
             ) : (
-              <div className="checkout__state checkout__state--error" role="alert">
-                Stripe is not configured correctly.
+              <div className="checkout__state checkout__state--error">
+                Stripe error
               </div>
             )}
           </section>
