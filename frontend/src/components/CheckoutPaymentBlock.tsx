@@ -4,7 +4,7 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import "./CheckoutPaymentBlock.css";
+import "../styles/CheckoutPaymentBlock.css";
 
 type CheckoutPaymentBlockProps = {
   orderId: number;
