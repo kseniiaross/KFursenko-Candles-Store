@@ -173,7 +173,7 @@ const Checkout: React.FC = () => {
     try {
       const orderResponse = await api.post("/orders/", {
         items: items.map((item) => ({
-          candle_id: item.candle_id,
+          variant_id: item.variant_id,
           quantity: item.quantity,
           is_gift: Boolean(item.isGift),
         })),

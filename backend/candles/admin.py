@@ -70,17 +70,82 @@ class CandleImageInline(admin.TabularInline):
 # =========================
 @admin.register(Candle)
 class CandleAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "is_sold_out", "is_bestseller", "created_at")
+    list_display = (
+        "id",
+        "name",
+        "variant_stock_total",
+        "has_active_stock",
+        "is_sold_out",
+        "is_bestseller",
+        "created_at",
+    )
     list_filter = ("category", "is_sold_out", "is_bestseller", "created_at")
     search_fields = ("name", "slug", "description")
     ordering = ("-created_at",)
     prepopulated_fields = {"slug": ("name",)}
 
-    # ❌ УБРАЛИ in_stock — из-за него падало
-    readonly_fields = ("created_at",)
-
+    readonly_fields = ("created_at", "variant_stock_total", "has_active_stock")
     list_editable = ("is_sold_out", "is_bestseller")
     inlines = [CandleVariantInline, CandleImageInline]
+
+    fieldsets = (
+        (
+            "Main",
+            {
+                "fields": (
+                    "category",
+                    "collections",
+                    "offers",
+                    "name",
+                    "slug",
+                    "description",
+                    "image",
+                    "price",
+                ),
+            },
+        ),
+        (
+            "Display",
+            {
+                "fields": (
+                    "is_sold_out",
+                    "is_bestseller",
+                ),
+            },
+        ),
+        (
+            "Variant stock summary",
+            {
+                "fields": (
+                    "variant_stock_total",
+                    "has_active_stock",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def variant_stock_total(self, obj):
+        return sum(
+            variant.stock_qty
+            for variant in obj.variants.all()
+            if variant.is_active
+        )
+
+    variant_stock_total.short_description = "Variant stock total"
+
+    def has_active_stock(self, obj):
+        return obj.variants.filter(is_active=True, stock_qty__gt=0).exists()
+
+    has_active_stock.boolean = True
+    has_active_stock.short_description = "Has active variant stock"
 
 
 # =========================

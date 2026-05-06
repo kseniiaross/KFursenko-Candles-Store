@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
 
-from candles.models import Candle
+from candles.models import CandleVariant
 from .models import Order, OrderItem
 
 
@@ -51,13 +51,13 @@ class OrderReadSerializer(serializers.ModelSerializer):
 
 
 class OrderItemCreateSerializer(serializers.Serializer):
-    candle_id = serializers.IntegerField()
+    variant_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1, max_value=999)
     is_gift = serializers.BooleanField(required=False, default=False)
 
-    def validate_candle_id(self, value):
+    def validate_variant_id(self, value):
         if value <= 0:
-            raise serializers.ValidationError("candle_id must be positive.")
+            raise serializers.ValidationError("variant_id must be positive.")
         return value
 
 
@@ -101,24 +101,32 @@ class OrderCreateSerializer(serializers.Serializer):
         merged: dict[int, dict[str, int | bool]] = {}
 
         for item in items_data:
-            cid = int(item["candle_id"])
+            variant_id = int(item["variant_id"])
             qty = int(item["quantity"])
             is_gift = bool(item.get("is_gift", False))
 
-            if cid not in merged:
-                merged[cid] = {"quantity": 0, "is_gift": False}
+            if variant_id not in merged:
+                merged[variant_id] = {"quantity": 0, "is_gift": False}
 
-            merged[cid]["quantity"] = int(merged[cid]["quantity"]) + qty
-            merged[cid]["is_gift"] = bool(merged[cid]["is_gift"]) or is_gift
+            merged[variant_id]["quantity"] = int(merged[variant_id]["quantity"]) + qty
+            merged[variant_id]["is_gift"] = (
+                bool(merged[variant_id]["is_gift"]) or is_gift
+            )
 
-        candle_ids = list(merged.keys())
-        candles = Candle.objects.select_for_update().filter(id__in=candle_ids)
-        candle_map = {c.id: c for c in candles}
+        variant_ids = list(merged.keys())
 
-        if len(candle_map) != len(candle_ids):
-            missing = sorted(set(candle_ids) - set(candle_map.keys()))
+        variants = (
+            CandleVariant.objects.select_for_update()
+            .select_related("candle")
+            .filter(id__in=variant_ids)
+        )
+
+        variant_map = {variant.id: variant for variant in variants}
+
+        if len(variant_map) != len(variant_ids):
+            missing = sorted(set(variant_ids) - set(variant_map.keys()))
             raise serializers.ValidationError(
-                {"items": f"Some candle_id do not exist: {missing}"}
+                {"items": f"Some variant_id do not exist: {missing}"}
             )
 
         order = Order.objects.create(
@@ -140,29 +148,40 @@ class OrderCreateSerializer(serializers.Serializer):
 
         subtotal = Decimal("0.00")
 
-        for cid, payload in merged.items():
-            candle = candle_map[cid]
+        for variant_id, payload in merged.items():
+            variant = variant_map[variant_id]
+            candle = variant.candle
             qty = int(payload["quantity"])
             is_gift = bool(payload["is_gift"])
 
-            if candle.stock_qty < qty:
+            if not variant.is_active:
                 raise serializers.ValidationError(
-                    {"items": f"Not enough stock for: {candle.name} (id={cid})"}
+                    {"items": f"Variant is inactive: {candle.name} / {variant.size}"}
                 )
 
-            candle.stock_qty -= qty
-            candle.save(update_fields=["stock_qty"])
+            if variant.stock_qty < qty:
+                raise serializers.ValidationError(
+                    {
+                        "items": (
+                            f"Not enough stock for: {candle.name} / "
+                            f"{variant.size} (variant id={variant_id})"
+                        )
+                    }
+                )
+
+            variant.stock_qty -= qty
+            variant.save(update_fields=["stock_qty"])
 
             OrderItem.objects.create(
                 order=order,
                 candle=candle,
-                product_name=candle.name,
-                unit_price=candle.price,
+                product_name=f"{candle.name} - {variant.size}",
+                unit_price=variant.price,
                 quantity=qty,
                 is_gift=is_gift,
             )
 
-            subtotal += candle.price * qty
+            subtotal += variant.price * qty
 
         order.subtotal_amount = subtotal
         order.total_amount = subtotal + order.shipping_amount + order.tax_amount
