@@ -1,8 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
+import { deleteCartItem, patchCartItem } from "../api/cart";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   removeFromCart,
+  setCart,
   setGiftOption,
   updateQty,
 } from "../store/cartSlice";
@@ -20,7 +23,9 @@ const Cart: React.FC = () => {
   const dispatch = useAppDispatch();
 
   const items = useAppSelector((state) => state.cart.items);
-  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const isLoggedIn = useAppSelector((state) => Boolean(state.auth.isLoggedIn));
+
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const totalItems = useMemo(() => {
     return items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
@@ -30,7 +35,6 @@ const Cart: React.FC = () => {
     return items.reduce((sum, item) => {
       const price = Number(item.price) || 0;
       const quantity = Number(item.quantity) || 1;
-
       return sum + price * quantity;
     }, 0);
   }, [items]);
@@ -39,7 +43,7 @@ const Cart: React.FC = () => {
     return items.some((item) => Boolean(item.isGift));
   }, [items]);
 
-  const handleCheckout = () => {
+  const handleCheckout = (): void => {
     if (!items.length) return;
 
     if (!isLoggedIn) {
@@ -48,6 +52,86 @@ const Cart: React.FC = () => {
     }
 
     navigate("/checkout");
+  };
+
+  const handleRemove = async (
+    variantId: number,
+    itemId?: number
+  ): Promise<void> => {
+    dispatch(removeFromCart({ variant_id: variantId }));
+
+    if (!isLoggedIn || !itemId) return;
+
+    setUpdatingId(variantId);
+
+    try {
+      const serverItems = await deleteCartItem(itemId);
+      dispatch(setCart(serverItems));
+    } catch (error) {
+      console.error("Failed to remove cart item from backend:", error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleQuantityChange = async (
+    variantId: number,
+    nextQuantity: number,
+    itemId?: number
+  ): Promise<void> => {
+    const quantity = Math.max(1, Number(nextQuantity) || 1);
+
+    dispatch(
+      updateQty({
+        variant_id: variantId,
+        quantity,
+      })
+    );
+
+    if (!isLoggedIn || !itemId) return;
+
+    setUpdatingId(variantId);
+
+    try {
+      const serverItems = await patchCartItem(itemId, {
+        quantity,
+      });
+
+      dispatch(setCart(serverItems));
+    } catch (error) {
+      console.error("Failed to update cart item quantity:", error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleGiftChange = async (
+    variantId: number,
+    isGift: boolean,
+    itemId?: number
+  ): Promise<void> => {
+    dispatch(
+      setGiftOption({
+        variant_id: variantId,
+        isGift,
+      })
+    );
+
+    if (!isLoggedIn || !itemId) return;
+
+    setUpdatingId(variantId);
+
+    try {
+      const serverItems = await patchCartItem(itemId, {
+        is_gift: isGift,
+      });
+
+      dispatch(setCart(serverItems));
+    } catch (error) {
+      console.error("Failed to update gift option:", error);
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
@@ -74,14 +158,18 @@ const Cart: React.FC = () => {
             <ul className="cart__list">
               {items.map((item) => {
                 const variantId = Number(item.variant_id);
+                const itemId = item.item_id;
                 const quantity = Math.max(1, Number(item.quantity) || 1);
                 const price = Number(item.price) || 0;
                 const name = item.name?.trim() || `Candle #${item.candle_id}`;
                 const itemTotal = price * quantity;
+                const isUpdating = updatingId === variantId;
 
                 return (
                   <li
-                    key={`${variantId}-${item.size ?? "default"}`}
+                    key={`${variantId}-${itemId ?? "local"}-${
+                      item.size ?? "default"
+                    }`}
                     className="cartItem"
                   >
                     <div className="cartItem__imageWrap">
@@ -113,14 +201,14 @@ const Cart: React.FC = () => {
                             <input
                               type="checkbox"
                               checked={Boolean(item.isGift)}
-                              onChange={(event) =>
-                                dispatch(
-                                  setGiftOption({
-                                    variant_id: variantId,
-                                    isGift: event.target.checked,
-                                  })
-                                )
-                              }
+                              disabled={isUpdating}
+                              onChange={(event) => {
+                                void handleGiftChange(
+                                  variantId,
+                                  event.target.checked,
+                                  itemId
+                                );
+                              }}
                             />
 
                             <span>
@@ -136,13 +224,10 @@ const Cart: React.FC = () => {
                         <button
                           type="button"
                           className="cartItem__remove"
-                          onClick={() =>
-                            dispatch(
-                              removeFromCart({
-                                variant_id: variantId,
-                              })
-                            )
-                          }
+                          disabled={isUpdating}
+                          onClick={() => {
+                            void handleRemove(variantId, itemId);
+                          }}
                         >
                           Remove
                         </button>
@@ -154,23 +239,21 @@ const Cart: React.FC = () => {
                             Unit Price
                           </span>
 
-                          <span className="cartItem__price">
-                            {money(price)}
-                          </span>
+                          <span className="cartItem__price">{money(price)}</span>
                         </div>
 
                         <div className="cartItem__qty">
                           <button
                             type="button"
                             className="cartItem__qtyButton"
-                            onClick={() =>
-                              dispatch(
-                                updateQty({
-                                  variant_id: variantId,
-                                  quantity: Math.max(1, quantity - 1),
-                                })
-                              )
-                            }
+                            disabled={isUpdating || quantity <= 1}
+                            onClick={() => {
+                              void handleQuantityChange(
+                                variantId,
+                                quantity - 1,
+                                itemId
+                              );
+                            }}
                           >
                             −
                           </button>
@@ -180,14 +263,14 @@ const Cart: React.FC = () => {
                           <button
                             type="button"
                             className="cartItem__qtyButton"
-                            onClick={() =>
-                              dispatch(
-                                updateQty({
-                                  variant_id: variantId,
-                                  quantity: quantity + 1,
-                                })
-                              )
-                            }
+                            disabled={isUpdating}
+                            onClick={() => {
+                              void handleQuantityChange(
+                                variantId,
+                                quantity + 1,
+                                itemId
+                              );
+                            }}
                           >
                             +
                           </button>
