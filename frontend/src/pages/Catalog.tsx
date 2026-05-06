@@ -9,6 +9,7 @@ import {
   isCandleAvailable,
 } from "../types/candle";
 import { listCandles, listCategories } from "../api/candles";
+import { searchWithLumiere } from "../api/lumiere";
 import { useAppDispatch } from "../store/hooks";
 import { openSizeModal } from "../store/modalSlice";
 
@@ -16,6 +17,7 @@ import "../styles/Catalog.css";
 
 const ITEMS_PER_BATCH = 8;
 const SEARCH_DEBOUNCE_MS = 420;
+const AI_SEARCH_LIMIT = 8;
 
 function normalizeBadges(badges?: CandleBadge[]): CandleBadge[] {
   if (!Array.isArray(badges)) return [];
@@ -51,6 +53,11 @@ const Catalog: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMode, setAiMode] = useState(false);
+  const [aiText, setAiText] = useState("");
+  const [aiQuery, setAiQuery] = useState("");
+
   const q = searchParams.get("q") ?? "";
   const categoryParam = searchParams.get("category") ?? "";
 
@@ -68,6 +75,8 @@ const Catalog: React.FC = () => {
   }, [categoryParam]);
 
   useEffect(() => {
+    if (aiMode) return;
+
     if (debounceRef.current) {
       window.clearTimeout(debounceRef.current);
     }
@@ -90,12 +99,14 @@ const Catalog: React.FC = () => {
         window.clearTimeout(debounceRef.current);
       }
     };
-  }, [searchInput, setSearchParams]);
+  }, [aiMode, searchInput, searchParams, setSearchParams]);
 
   useEffect(() => {
     let active = true;
 
     async function loadCatalog(): Promise<void> {
+      if (aiMode) return;
+
       try {
         setLoading(true);
         setError("");
@@ -144,7 +155,7 @@ const Catalog: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [q, categoryId, categorySlug, t]);
+  }, [aiMode, q, categoryId, categorySlug, t]);
 
   const visibleCandles = useMemo(() => {
     return candles.slice(0, visibleCount);
@@ -187,6 +198,10 @@ const Catalog: React.FC = () => {
   };
 
   const onCategoryChange = (value: string): void => {
+    setAiMode(false);
+    setAiText("");
+    setAiQuery("");
+
     updateParams((next) => {
       if (value) {
         next.set("category", value);
@@ -198,6 +213,10 @@ const Catalog: React.FC = () => {
 
   const clearFilters = (): void => {
     setSearchInput("");
+    setAiMode(false);
+    setAiText("");
+    setAiQuery("");
+    setError("");
 
     updateParams((next) => {
       next.delete("q");
@@ -205,7 +224,58 @@ const Catalog: React.FC = () => {
     });
   };
 
-  const hasActiveFilters = Boolean(q || categoryParam || searchInput.trim());
+  const runAiSearch = async (): Promise<void> => {
+    const cleanQuery = searchInput.trim();
+
+    if (!cleanQuery || aiLoading) return;
+
+    try {
+      setAiLoading(true);
+      setLoading(true);
+      setError("");
+      setAiText("");
+      setAiQuery(cleanQuery);
+      setVisibleCount(ITEMS_PER_BATCH);
+
+      const aiResponse = await searchWithLumiere(
+        cleanQuery,
+        AI_SEARCH_LIMIT,
+        true
+      );
+
+      const suggestionIds = aiResponse.suggestions.map((item) => item.id);
+
+      if (suggestionIds.length === 0) {
+        setCandles([]);
+        setAiMode(true);
+        setAiText(aiResponse.text ?? "");
+        return;
+      }
+
+      const allCandles = await listCandles({
+        ordering: "-created_at",
+      });
+
+      const candleMap = new Map(allCandles.map((candle) => [candle.id, candle]));
+
+      const aiCandles = suggestionIds
+        .map((id) => candleMap.get(id))
+        .filter((candle): candle is Candle => Boolean(candle));
+
+      setCandles(aiCandles);
+      setAiMode(true);
+      setAiText(aiResponse.text ?? "");
+    } catch {
+      setError("Lumière AI Search could not complete. Please try again.");
+    } finally {
+      setAiLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const hasActiveFilters = Boolean(
+    q || categoryParam || searchInput.trim() || aiMode
+  );
 
   const onAddToCart = (candle: Candle): void => {
     const variant = getLowestActiveVariant(candle);
@@ -230,7 +300,10 @@ const Catalog: React.FC = () => {
             className="catalog__filters"
             role="search"
             aria-label={t("catalog.filtersLabel")}
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void runAiSearch();
+            }}
           >
             <div className="catalog__filterItem catalog__filterItem--search">
               <label className="catalog__label" htmlFor="catalog-search">
@@ -242,8 +315,16 @@ const Catalog: React.FC = () => {
                 className="catalog__searchLine"
                 type="search"
                 value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder={t("catalog.searchPlaceholder")}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
+
+                  if (aiMode) {
+                    setAiMode(false);
+                    setAiText("");
+                    setAiQuery("");
+                  }
+                }}
+                placeholder="Try: I want something cozy for reading at night"
                 autoComplete="off"
               />
             </div>
@@ -259,7 +340,7 @@ const Catalog: React.FC = () => {
                   className="catalog__categoryInline"
                   value={categoryParam}
                   onChange={(event) => onCategoryChange(event.target.value)}
-                  disabled={categories.length === 0}
+                  disabled={categories.length === 0 || aiLoading}
                 >
                   <option value="">{t("catalog.allCategories")}</option>
 
@@ -272,20 +353,44 @@ const Catalog: React.FC = () => {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="catalog__clearInline"
-              onClick={clearFilters}
-              disabled={!hasActiveFilters}
-            >
-              {t("catalog.clear")}
-            </button>
+            <div className="catalog__actionsInline">
+              <button
+                type="submit"
+                className="catalog__aiButton"
+                disabled={!searchInput.trim() || aiLoading}
+              >
+                {aiLoading ? "Thinking..." : "Lumière AI Search"}
+              </button>
+
+              <button
+                type="button"
+                className="catalog__clearInline"
+                onClick={clearFilters}
+                disabled={!hasActiveFilters || aiLoading}
+              >
+                {t("catalog.clear")}
+              </button>
+            </div>
           </form>
+
+          {aiMode && (aiText || aiQuery) ? (
+            <section className="catalogAi" aria-live="polite">
+              <div className="catalogAi__eyebrow">Lumière AI Search</div>
+
+              {aiQuery ? (
+                <h2 className="catalogAi__query">“{aiQuery}”</h2>
+              ) : null}
+
+              {aiText ? <p className="catalogAi__text">{aiText}</p> : null}
+            </section>
+          ) : null}
         </header>
 
         <div className="catalog__status" aria-live="polite" aria-atomic="true">
           {loading ? (
-            <p className="catalog__state">{t("catalog.loading")}</p>
+            <p className="catalog__state">
+              {aiLoading ? "Lumière is choosing candles..." : t("catalog.loading")}
+            </p>
           ) : null}
 
           {!loading && error ? (
@@ -295,7 +400,11 @@ const Catalog: React.FC = () => {
           ) : null}
 
           {!loading && !error && candles.length === 0 ? (
-            <p className="catalog__state">No matching candles found.</p>
+            <p className="catalog__state">
+              {aiMode
+                ? "Lumière could not find a strong match. Try describing the mood, room, or scent family."
+                : "No matching candles found."}
+            </p>
           ) : null}
         </div>
 

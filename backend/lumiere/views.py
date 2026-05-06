@@ -12,6 +12,7 @@ from .serializers import (
     LumiereSearchOutSerializer,
 )
 from .services import (
+    ai_search_candles,
     build_store_context,
     call_openai_reply,
     get_candle_by_slug,
@@ -68,10 +69,14 @@ class LumiereReplyView(APIView):
 
         if slug:
             candle = get_candle_by_slug(slug, locale=locale)
-            suggestions = [candle] if candle else search_candles(
-                slug.replace("-", " "),
-                limit=6,
-                locale=locale,
+            suggestions = (
+                [candle]
+                if candle
+                else search_candles(
+                    slug.replace("-", " "),
+                    limit=6,
+                    locale=locale,
+                )
             )
         else:
             suggestions = search_candles(text, limit=6, locale=locale)
@@ -124,14 +129,13 @@ class LumiereSearchView(APIView):
         locale = data.get("locale", "en")
         limit = data.get("limit", 6)
 
-        suggestions = search_candles(query, limit=limit, locale=locale)
-
-        output_serializer = LumiereSearchOutSerializer(
-            data={
-                "query": query,
-                "suggestions": suggestions,
-            }
+        result = ai_search_candles(
+            query=query,
+            limit=limit,
+            locale=locale,
         )
+
+        output_serializer = LumiereSearchOutSerializer(data=result)
         output_serializer.is_valid(raise_exception=True)
 
         return Response(output_serializer.data, status=status.HTTP_200_OK)

@@ -2,8 +2,6 @@ from rest_framework import serializers
 
 
 class LumiereMessageSerializer(serializers.Serializer):
-    """Single message in the conversation history."""
-
     role = serializers.ChoiceField(choices=["user", "assistant"])
     text = serializers.CharField(max_length=4000)
 
@@ -20,6 +18,7 @@ class LumiereSearchInSerializer(serializers.Serializer):
     query = serializers.CharField(max_length=500)
     locale = serializers.ChoiceField(choices=["en", "ru", "es", "fr"], default="en")
     limit = serializers.IntegerField(required=False, min_value=1, max_value=12, default=6)
+    explain = serializers.BooleanField(required=False, default=False)
 
 
 class LumiereSuggestionSerializer(serializers.Serializer):
@@ -41,4 +40,5 @@ class LumiereReplyOutSerializer(serializers.Serializer):
 
 class LumiereSearchOutSerializer(serializers.Serializer):
     query = serializers.CharField()
+    text = serializers.CharField(required=False, allow_blank=True)
     suggestions = LumiereSuggestionSerializer(many=True)
