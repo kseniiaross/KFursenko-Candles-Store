@@ -55,11 +55,21 @@ class OrderItemCreateSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1, max_value=999)
     is_gift = serializers.BooleanField(required=False, default=False)
 
+    def validate_candle_id(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("candle_id must be positive.")
+        return value
+
 
 class ShippingSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=255)
     line1 = serializers.CharField(max_length=255)
-    line2 = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    line2 = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        default="",
+    )
     city = serializers.CharField(max_length=255)
     state = serializers.CharField(max_length=255)
     postal_code = serializers.CharField(max_length=32)
@@ -67,8 +77,12 @@ class ShippingSerializer(serializers.Serializer):
 
     def validate_country(self, value: str) -> str:
         v = (value or "").strip().upper()
+
         if len(v) != 2:
-            raise serializers.ValidationError("Country must be ISO 3166-1 alpha-2 (e.g., US).")
+            raise serializers.ValidationError(
+                "Country must be ISO 3166-1 alpha-2 (e.g., US)."
+            )
+
         return v
 
 
@@ -102,8 +116,10 @@ class OrderCreateSerializer(serializers.Serializer):
         candle_map = {c.id: c for c in candles}
 
         if len(candle_map) != len(candle_ids):
-          missing = sorted(set(candle_ids) - set(candle_map.keys()))
-          raise serializers.ValidationError({"items": f"Some candle_id do not exist: {missing}"})
+            missing = sorted(set(candle_ids) - set(candle_map.keys()))
+            raise serializers.ValidationError(
+                {"items": f"Some candle_id do not exist: {missing}"}
+            )
 
         order = Order.objects.create(
             user=user,

@@ -110,11 +110,12 @@ const Checkout: React.FC = () => {
     return cartItems
       .map((item) => ({
         ...item,
+        candle_id: Number(item.candle_id) || 0,
         variant_id: Number(item.variant_id) || 0,
         quantity: Math.max(1, Number(item.quantity) || 1),
         price: Number(item.price) || 0,
       }))
-      .filter((item) => item.variant_id > 0);
+      .filter((item) => item.candle_id > 0);
   }, [cartItems]);
 
   const subtotal = useMemo(() => {
@@ -172,7 +173,7 @@ const Checkout: React.FC = () => {
     try {
       const orderResponse = await api.post("/orders/", {
         items: items.map((item) => ({
-          variant_id: item.variant_id,
+          candle_id: item.candle_id,
           quantity: item.quantity,
           is_gift: Boolean(item.isGift),
         })),
@@ -287,7 +288,7 @@ const Checkout: React.FC = () => {
 
                     return (
                       <li
-                        key={`${item.variant_id}-${item.size ?? "default"}`}
+                        key={`${item.candle_id}-${item.variant_id}-${item.size ?? "default"}`}
                         className="checkoutItem"
                       >
                         {item.image ? (
@@ -467,10 +468,7 @@ const Checkout: React.FC = () => {
                   </div>
 
                   <div className="checkoutForm__group">
-                    <label
-                      className="checkoutForm__label"
-                      htmlFor="checkout-postal-code"
-                    >
+                    <label className="checkoutForm__label" htmlFor="checkout-postal-code">
                       ZIP code
                     </label>
                     <input
