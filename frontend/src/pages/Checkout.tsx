@@ -58,6 +58,21 @@ function loadProfileFromStorage(): SavedProfile | null {
   }
 }
 
+function getErrorMessage(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response
+  ) {
+    return JSON.stringify(error.response.data);
+  }
+
+  return "Could not prepare payment. Please try again.";
+}
+
 const SHIPPING_AMOUNT = 15;
 
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY as
@@ -145,7 +160,8 @@ const Checkout: React.FC = () => {
     form.address_line1.trim().length > 0 &&
     form.city.trim().length > 0 &&
     form.state.trim().length > 0 &&
-    form.postal_code.trim().length > 0;
+    form.postal_code.trim().length > 0 &&
+    form.country.trim().length > 0;
 
   const showPayment = Boolean(clientSecret) && orderId !== null;
 
@@ -161,7 +177,7 @@ const Checkout: React.FC = () => {
   }, [clientSecret]);
 
   const createOrderAndIntent = async (): Promise<void> => {
-    if (!canPreparePayment) return;
+    if (!canPreparePayment || loading) return;
 
     setLoading(true);
     setErrorMsg("");
@@ -173,7 +189,7 @@ const Checkout: React.FC = () => {
     try {
       const orderResponse = await api.post("/orders/", {
         items: items.map((item) => ({
-          variant_id: item.variant_id,
+          candle_id: item.candle_id,
           quantity: item.quantity,
           is_gift: Boolean(item.isGift),
         })),
@@ -209,16 +225,11 @@ const Checkout: React.FC = () => {
 
       setClientSecret(clientSecretValue);
 
-      if (typeof intentResponse.data?.tax_amount === "number") {
-        setTax(intentResponse.data.tax_amount);
-      }
-
-      if (typeof intentResponse.data?.total_amount === "number") {
-        setTotal(intentResponse.data.total_amount);
-      }
+      setTax(Number(intentResponse.data?.tax_amount) || 0);
+      setTotal(Number(intentResponse.data?.total_amount) || subtotal + SHIPPING_AMOUNT);
     } catch (error) {
       console.error("Checkout order error:", error);
-      setErrorMsg("Could not prepare payment. Please try again.");
+      setErrorMsg(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -241,7 +252,8 @@ const Checkout: React.FC = () => {
           </h1>
 
           <p className="checkout__subtitle">
-            Review your items, enter your shipping details, and continue to secure payment.
+            Review your items, enter your shipping details, and continue to
+            secure payment.
           </p>
         </header>
 
@@ -284,7 +296,8 @@ const Checkout: React.FC = () => {
               <>
                 <ul className="checkout__items" role="list">
                   {items.map((item) => {
-                    const name = item.name?.trim() || `Candle #${item.candle_id}`;
+                    const name =
+                      item.name?.trim() || `Candle #${item.candle_id}`;
 
                     return (
                       <li
@@ -312,7 +325,9 @@ const Checkout: React.FC = () => {
                           <h3 className="checkoutItem__name">{name}</h3>
 
                           {item.size && (
-                            <p className="checkoutItem__meta">Size: {item.size}</p>
+                            <p className="checkoutItem__meta">
+                              Size: {item.size}
+                            </p>
                           )}
 
                           <p className="checkoutItem__meta">

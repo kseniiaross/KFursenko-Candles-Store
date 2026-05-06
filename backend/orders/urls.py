@@ -18,8 +18,6 @@ urlpatterns = [
     path("from-cart/", CreateOrderFromCartAPIView.as_view(), name="create-order-from-cart"),
     path("<int:pk>/", OrderDetailAPIView.as_view(), name="order-detail"),
     path("<int:pk>/status/", OrderStatusUpdateAPIView.as_view(), name="order-status-update"),
-    
-    # Stripe later:
     path("create-intent/", create_payment_intent, name="create-payment-intent"),
     path("webhook/", stripe_webhook, name="stripe-webhook"),
 ]
