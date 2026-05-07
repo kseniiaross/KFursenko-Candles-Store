@@ -257,6 +257,7 @@ REST_FRAMEWORK = {
         "stripe_intent_user": config("THROTTLE_STRIPE_INTENT_USER", default="20/min"),
         "lumiere_anon": config("THROTTLE_LUMIERE_ANON", default="20/min"),
         "lumiere_user": config("THROTTLE_LUMIERE_USER", default="60/min"),
+        "lumiere_search": config("THROTTLE_LUMIERE_SEARCH", default="30/min"),
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }

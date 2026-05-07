@@ -73,19 +73,38 @@ class CandleAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "fragrance_family",
+        "intensity",
         "variant_stock_total",
         "has_active_stock",
         "is_sold_out",
         "is_bestseller",
         "created_at",
     )
-    list_filter = ("category", "is_sold_out", "is_bestseller", "created_at")
-    search_fields = ("name", "slug", "description")
+    list_filter = (
+        "category",
+        "fragrance_family",
+        "intensity",
+        "is_sold_out",
+        "is_bestseller",
+        "created_at",
+    )
+    search_fields = (
+        "name",
+        "slug",
+        "description",
+        "fragrance_family",
+        "mood_tags",
+        "use_case_tags",
+        "ideal_spaces",
+        "season_tags",
+    )
     ordering = ("-created_at",)
     prepopulated_fields = {"slug": ("name",)}
 
     readonly_fields = ("created_at", "variant_stock_total", "has_active_stock")
     list_editable = ("is_sold_out", "is_bestseller")
+    filter_horizontal = ("collections", "offers")
     inlines = [CandleVariantInline, CandleImageInline]
 
     fieldsets = (
@@ -101,6 +120,26 @@ class CandleAdmin(admin.ModelAdmin):
                     "description",
                     "image",
                     "price",
+                ),
+            },
+        ),
+        (
+            "AI Search / Scent Profile",
+            {
+                "fields": (
+                    "fragrance_family",
+                    "intensity",
+                    "top_notes",
+                    "heart_notes",
+                    "base_notes",
+                    "mood_tags",
+                    "use_case_tags",
+                    "ideal_spaces",
+                    "season_tags",
+                ),
+                "description": (
+                    "Use JSON arrays for notes/tags. Example: "
+                    '["cozy", "warm", "bedroom", "relaxing"]'
                 ),
             },
         ),

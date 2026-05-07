@@ -100,7 +100,6 @@ class Offer(models.Model):
     priority = models.PositiveSmallIntegerField(default=100)
     is_active = models.BooleanField(default=True)
 
-    # Allows one offer/badge to apply to all candles.
     apply_globally = models.BooleanField(default=False)
 
     new_shopper_only = models.BooleanField(default=False)
@@ -170,6 +169,11 @@ class Offer(models.Model):
 # CANDLE
 # ======================================================
 class Candle(models.Model):
+    class Intensity(models.TextChoices):
+        SOFT = "soft", "Soft"
+        MEDIUM = "medium", "Medium"
+        STRONG = "strong", "Strong"
+
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
@@ -183,6 +187,21 @@ class Candle(models.Model):
     slug = models.SlugField(max_length=220, unique=True, blank=True)
 
     description = models.TextField(blank=True)
+
+    # AI Search structured fields
+    fragrance_family = models.CharField(max_length=120, blank=True)
+    intensity = models.CharField(
+        max_length=20,
+        choices=Intensity.choices,
+        blank=True,
+    )
+    top_notes = models.JSONField(default=list, blank=True)
+    heart_notes = models.JSONField(default=list, blank=True)
+    base_notes = models.JSONField(default=list, blank=True)
+    mood_tags = models.JSONField(default=list, blank=True)
+    use_case_tags = models.JSONField(default=list, blank=True)
+    ideal_spaces = models.JSONField(default=list, blank=True)
+    season_tags = models.JSONField(default=list, blank=True)
 
     image = CloudinaryField("image", blank=True, null=True)
 
@@ -202,6 +221,26 @@ class Candle(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
+    def clean(self):
+        list_fields = [
+            "top_notes",
+            "heart_notes",
+            "base_notes",
+            "mood_tags",
+            "use_case_tags",
+            "ideal_spaces",
+            "season_tags",
+        ]
+
+        for field_name in list_fields:
+            value = getattr(self, field_name)
+
+            if not isinstance(value, list):
+                raise ValidationError({field_name: "Must be a list."})
+
+            if any(not isinstance(item, str) for item in value):
+                raise ValidationError({field_name: "Every item must be a string."})
+
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(self.name) or "candle"
@@ -214,6 +253,7 @@ class Candle(models.Model):
 
             self.slug = slug
 
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
