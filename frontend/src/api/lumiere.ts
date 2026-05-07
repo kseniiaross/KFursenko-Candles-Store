@@ -1,6 +1,8 @@
 import api from "./axiosInstance";
 import { getCurrentApiLanguage } from "./candles";
 
+export type LumiereLocale = "en" | "ru" | "es" | "fr";
+
 export type LumiereSearchSuggestion = {
   id: number;
   name: string;
@@ -19,6 +21,24 @@ export type LumiereSearchResponse = {
   suggestions: LumiereSearchSuggestion[];
 };
 
+export type LumiereHistoryMessage = {
+  role: "user" | "assistant";
+  text: string;
+};
+
+export type LumiereReplyPayload = {
+  text: string;
+  locale?: LumiereLocale;
+  userName?: string | null;
+  page?: string;
+  history?: LumiereHistoryMessage[];
+};
+
+export type LumiereReply = {
+  text: string;
+  suggestions?: LumiereSearchSuggestion[];
+};
+
 export async function searchWithLumiere(
   query: string,
   limit = 8,
@@ -29,6 +49,21 @@ export async function searchWithLumiere(
     locale: getCurrentApiLanguage(),
     limit,
     explain,
+  });
+
+  return response.data;
+}
+
+export async function sendLumiereReply(
+  payload: LumiereReplyPayload,
+): Promise<LumiereReply> {
+  const response = await api.post<LumiereReply>("/lumiere/reply/", {
+    ...payload,
+    text: payload.text.trim(),
+    locale: payload.locale ?? getCurrentApiLanguage(),
+    userName: payload.userName ?? null,
+    page: payload.page ?? "",
+    history: payload.history ?? [],
   });
 
   return response.data;
