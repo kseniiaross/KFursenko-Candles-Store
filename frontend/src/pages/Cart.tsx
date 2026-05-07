@@ -293,20 +293,22 @@ const Cart: React.FC = () => {
             <section className="cart__footer">
               <div className="cart__summary">
                 <div className="cart__summaryRow">
-                  <span>Items</span>
-                  <span>{totalItems}</span>
+                  <span className="cart__summaryLabel">Items</span>
+                  <span className="cart__summaryValue">{totalItems}</span>
                 </div>
 
                 {hasGiftItems && (
                   <div className="cart__summaryRow">
-                    <span>Gift wrapping</span>
-                    <span>Free</span>
+                    <span className="cart__summaryLabel">Gift wrapping</span>
+                    <span className="cart__summaryValue">Free</span>
                   </div>
                 )}
 
                 <div className="cart__summaryRow cart__summaryRow--total">
-                  <span>Total</span>
-                  <span>{money(totalAmount)}</span>
+                  <span className="cart__summaryLabel">Total</span>
+                  <span className="cart__summaryValue">
+                    {money(totalAmount)}
+                  </span>
                 </div>
               </div>
 
