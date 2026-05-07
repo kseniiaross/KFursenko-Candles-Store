@@ -12,6 +12,13 @@ export type LumiereSearchSuggestion = {
   description?: string;
   fragrance_family?: string;
   intensity?: string;
+  top_notes?: string[];
+  heart_notes?: string[];
+  base_notes?: string[];
+  mood_tags?: string[];
+  use_case_tags?: string[];
+  ideal_spaces?: string[];
+  season_tags?: string[];
   match_reason?: string;
 };
 

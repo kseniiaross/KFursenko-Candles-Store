@@ -32,6 +32,7 @@ def extract_slug_from_text(text: str) -> str | None:
         return None
 
     match = _CATALOG_URL_RE.search(text.strip())
+
     if not match:
         return None
 

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import re
@@ -6,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Prefetch, Q
 
 from candles.models import Candle, CandleVariant
@@ -14,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 HISTORY_WINDOW = 10
 AI_SEARCH_CATALOG_LIMIT = 80
+AI_SEARCH_CACHE_SECONDS = 60 * 30
 
 SUPPORTED_LOCALES = {"en", "ru", "es", "fr"}
 
@@ -51,6 +54,17 @@ def _format_price(value: Decimal | None) -> str:
     return f"{value:.2f}"
 
 
+def _safe_list(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+
+    return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+
+
+def _join_list(value: Any) -> str:
+    return ", ".join(_safe_list(value))
+
+
 def _normalize_text(value: str) -> str:
     text = (value or "").lower().strip()
     text = re.sub(r"https?://\S+", " ", text)
@@ -64,6 +78,12 @@ def _normalize_text(value: str) -> str:
     )
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
+
+def _cache_key(prefix: str, query: str, locale: str, limit: int) -> str:
+    raw = f"{prefix}:{locale}:{limit}:{_normalize_text(query)}"
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return f"lumiere:{prefix}:{digest}"
 
 
 def _extract_text_from_responses_api(payload: Dict[str, Any]) -> str:
@@ -112,7 +132,6 @@ def _get_active_variants(candle: Candle) -> List[CandleVariant]:
 
 def _get_display_price(candle: Candle) -> str:
     variants = _get_active_variants(candle)
-
     priced_variants = [variant for variant in variants if variant.price is not None]
 
     if priced_variants:
@@ -166,8 +185,15 @@ def _serialize_candle(
         "price": _get_display_price(candle),
         "in_stock": _is_candle_available(candle),
         "description": _localized_value(candle, "description", locale),
-        "fragrance_family": "",
-        "intensity": "",
+        "fragrance_family": candle.fragrance_family or "",
+        "intensity": candle.intensity or "",
+        "top_notes": _safe_list(candle.top_notes),
+        "heart_notes": _safe_list(candle.heart_notes),
+        "base_notes": _safe_list(candle.base_notes),
+        "mood_tags": _safe_list(candle.mood_tags),
+        "use_case_tags": _safe_list(candle.use_case_tags),
+        "ideal_spaces": _safe_list(candle.ideal_spaces),
+        "season_tags": _safe_list(candle.season_tags),
         "match_reason": match_reason,
     }
 
@@ -185,6 +211,15 @@ def _compact_candle_for_ai(candle: Candle, locale: str) -> Dict[str, Any]:
         "price_from": _get_display_price(candle),
         "in_stock": _is_candle_available(candle),
         "is_bestseller": candle.is_bestseller,
+        "fragrance_family": candle.fragrance_family or "",
+        "intensity": candle.intensity or "",
+        "top_notes": _safe_list(candle.top_notes),
+        "heart_notes": _safe_list(candle.heart_notes),
+        "base_notes": _safe_list(candle.base_notes),
+        "mood_tags": _safe_list(candle.mood_tags),
+        "use_case_tags": _safe_list(candle.use_case_tags),
+        "ideal_spaces": _safe_list(candle.ideal_spaces),
+        "season_tags": _safe_list(candle.season_tags),
         "variants": [
             {
                 "id": variant.id,
@@ -272,6 +307,12 @@ def ai_search_candles(
             "suggestions": [],
         }
 
+    cache_key = _cache_key("ai_search", clean_query, safe_locale, limit)
+    cached_result = cache.get(cache_key)
+
+    if isinstance(cached_result, dict):
+        return cached_result
+
     catalog = _build_ai_catalog(safe_locale)
 
     if not catalog:
@@ -292,17 +333,29 @@ def ai_search_candles(
     instructions = f"""
 You are Lumière AI Search for a premium handmade candle boutique.
 
-Use ONLY this catalog. Do not invent products.
+Use ONLY this catalog. Do not invent products, prices, stock status, scent notes, or policies.
 
-The catalog has:
+The catalog includes:
 - product name
 - description
 - category
 - collections
+- fragrance family
+- intensity
+- top notes
+- heart notes
+- base notes
+- mood tags
+- use case tags
+- ideal spaces
+- season tags
 - variants with size, price, and stock
 
-Understand the customer's intent, including vague searches like:
-"I want something cozy", "gift", "fresh", "warm", "relaxing", "for bedroom".
+Understand natural-language shopping intent:
+- mood: cozy, relaxing, romantic, clean, fresh, warm, elegant
+- room: bedroom, bathroom, kitchen, office, living room
+- purpose: gift, reading, sleep, focus, spa night, hosting
+- preferences: not sweet, floral, woody, citrus, vanilla, soft, strong
 
 Return ONLY valid JSON:
 {{
@@ -317,6 +370,9 @@ Rules:
 - product_ids must be real ids from catalog.
 - product_ids length: 0 to {limit}.
 - Prefer in-stock products.
+- Prefer stronger intent matches over bestsellers.
+- text should be 2-4 sentences.
+- reasons should be short and specific.
 - Reply in locale: {safe_locale}.
 """
 
@@ -368,11 +424,21 @@ Rules:
                 )
             )
 
-        return {
+        result = {
             "query": clean_query,
-            "text": explanation,
+            "text": explanation
+            or _t(
+                safe_locale,
+                "Here are the closest matches I found based on your request.",
+                "Вот самые близкие варианты, которые я нашла по твоему запросу.",
+                "Estas son las mejores coincidencias que encontré según tu búsqueda.",
+                "Voici les meilleures correspondances que j'ai trouvées pour ta recherche.",
+            ),
             "suggestions": suggestions,
         }
+
+        cache.set(cache_key, result, AI_SEARCH_CACHE_SECONDS)
+        return result
 
     except Exception:
         logger.exception("Lumiere AI Search failed. Falling back to local search.")
@@ -383,10 +449,10 @@ Rules:
             "query": clean_query,
             "text": _t(
                 safe_locale,
-                "AI search had a temporary issue, so I used the closest catalog matches.",
-                "У AI-поиска временная ошибка, поэтому я показала ближайшие совпадения из каталога.",
-                "La búsqueda con IA tuvo un problema temporal, así que usé las coincidencias más cercanas del catálogo.",
-                "La recherche IA a rencontré un problème temporaire, donc j'ai utilisé les meilleures correspondances du catalogue.",
+                "Lumière is temporarily using catalog matching instead of full AI search. These are the closest candles I found from the available product data.",
+                "Lumière временно использует поиск по каталогу вместо полного AI-поиска. Я показала самые близкие свечи по доступным данным товара.",
+                "Lumière está usando temporalmente coincidencias del catálogo en lugar de la búsqueda completa con IA. Estas son las velas más cercanas según los datos disponibles.",
+                "Lumière utilise temporairement la recherche catalogue au lieu de la recherche IA complète. Voici les bougies les plus proches selon les données disponibles.",
             ),
             "suggestions": fallback,
         }
@@ -451,6 +517,15 @@ def search_candles(
             | Q(description__icontains=term)
             | Q(category__name__icontains=term)
             | Q(collections__name__icontains=term)
+            | Q(fragrance_family__icontains=term)
+            | Q(intensity__icontains=term)
+            | Q(top_notes__icontains=term)
+            | Q(heart_notes__icontains=term)
+            | Q(base_notes__icontains=term)
+            | Q(mood_tags__icontains=term)
+            | Q(use_case_tags__icontains=term)
+            | Q(ideal_spaces__icontains=term)
+            | Q(season_tags__icontains=term)
         )
 
     candles = (
@@ -500,6 +575,27 @@ def build_store_context(suggestions: List[Dict[str, Any]]) -> str:
         if suggestion.get("description"):
             lines.append(f"  Description: {suggestion['description']}")
 
+        if suggestion.get("fragrance_family"):
+            lines.append(f"  Fragrance family: {suggestion['fragrance_family']}")
+
+        if suggestion.get("intensity"):
+            lines.append(f"  Intensity: {suggestion['intensity']}")
+
+        notes = [
+            ("Top notes", suggestion.get("top_notes")),
+            ("Heart notes", suggestion.get("heart_notes")),
+            ("Base notes", suggestion.get("base_notes")),
+            ("Mood", suggestion.get("mood_tags")),
+            ("Best for", suggestion.get("use_case_tags")),
+            ("Ideal spaces", suggestion.get("ideal_spaces")),
+            ("Season", suggestion.get("season_tags")),
+        ]
+
+        for label, values in notes:
+            joined = _join_list(values)
+            if joined:
+                lines.append(f"  {label}: {joined}")
+
     return "\n".join(lines)
 
 
@@ -517,10 +613,12 @@ Customer locale: {locale}. Always reply in that language.
 
 Rules:
 - ONLY recommend products from CATALOG SEARCH RESULTS.
-- Never invent products, prices, stock status, or policies.
+- Never invent products, prices, stock status, notes, or policies.
+- Use scent notes, mood tags, use case tags, ideal spaces, fragrance family, and intensity when available.
 - Customers can mark an item as a gift during checkout.
 - Gift wrapping is complimentary.
 - Keep replies warm, premium, and specific.
+- Ask maximum one clarifying question.
 """
 
 

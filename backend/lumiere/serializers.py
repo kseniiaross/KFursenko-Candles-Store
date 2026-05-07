@@ -30,6 +30,41 @@ class LumiereSuggestionSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, allow_blank=True)
     fragrance_family = serializers.CharField(required=False, allow_blank=True)
     intensity = serializers.CharField(required=False, allow_blank=True)
+    top_notes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    heart_notes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    base_notes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    mood_tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    use_case_tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    ideal_spaces = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
+    season_tags = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+    )
     match_reason = serializers.CharField(required=False, allow_blank=True)
 
 
