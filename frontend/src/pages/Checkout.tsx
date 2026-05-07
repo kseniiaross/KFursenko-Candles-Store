@@ -526,7 +526,7 @@ const Checkout: React.FC = () => {
               </form>
             ) : stripePromise && stripeOptions ? (
               <Elements stripe={stripePromise} options={stripeOptions}>
-                <CheckoutPaymentBlock orderId={orderId!} />
+                <CheckoutPaymentBlock orderId={orderId!} clientSecret={clientSecret} />
               </Elements>
             ) : (
               <div className="checkout__state checkout__state--error">
