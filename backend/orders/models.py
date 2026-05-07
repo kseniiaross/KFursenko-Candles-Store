@@ -33,19 +33,16 @@ class Order(models.Model):
         decimal_places=2,
         default=Decimal("0.00"),
     )
-
     shipping_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal("0.00"),
     )
-
     tax_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal("0.00"),
     )
-
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -57,13 +54,8 @@ class Order(models.Model):
     shipping_line2 = models.CharField(max_length=255, blank=True, default="")
     shipping_city = models.CharField(max_length=255, blank=True, default="")
     shipping_state = models.CharField(max_length=255, blank=True, default="")
-    shipping_postal_code = models.CharField(max_length=32, blank=True, default="")
-
-    shipping_country = models.CharField(
-        max_length=120,
-        blank=True,
-        default="United States",
-    )
+    shipping_postal_code = models.CharField(max_length=64, blank=True, default="")
+    shipping_country = models.CharField(max_length=120, blank=True, default="United States")
 
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True, default="")
     stripe_tax_calculation_id = models.CharField(max_length=255, blank=True, default="")

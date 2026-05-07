@@ -1,3 +1,5 @@
+// frontend/src/view/Checkout.tsx
+
 import React, { useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
@@ -41,6 +43,45 @@ type SavedProfile = {
   postalCode?: string;
   country?: string;
 };
+
+const COUNTRIES = [
+  "United States",
+  "Canada",
+  "United Kingdom",
+  "France",
+  "Germany",
+  "Italy",
+  "Spain",
+  "Australia",
+  "Japan",
+  "South Korea",
+  "Mexico",
+  "Brazil",
+  "Ukraine",
+  "Russia",
+];
+
+const STATES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "California",
+  "Colorado",
+  "Florida",
+  "Georgia",
+  "Illinois",
+  "Massachusetts",
+  "Maryland",
+  "Nevada",
+  "New Jersey",
+  "New York",
+  "North Carolina",
+  "Pennsylvania",
+  "Texas",
+  "Virginia",
+  "Washington",
+  "Washington, D.C.",
+];
 
 function money(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -117,12 +158,6 @@ function getErrorMessage(error: unknown): string {
     return detail;
   }
 
-  const errorMessage = record.error;
-
-  if (typeof errorMessage === "string") {
-    return errorMessage;
-  }
-
   return fallback;
 }
 
@@ -143,6 +178,7 @@ const Checkout: React.FC = () => {
   const statusId = useId();
 
   const isLoggedIn = useAppSelector((state) => Boolean(state.auth?.isLoggedIn));
+
   const cartItems = useAppSelector(
     (state) => (state.cart.items ?? []) as CartLine[]
   );
@@ -158,7 +194,9 @@ const Checkout: React.FC = () => {
 
   const [form, setForm] = useState<ShippingForm>({
     full_name: savedProfile
-      ? [savedProfile.firstName, savedProfile.lastName].filter(Boolean).join(" ")
+      ? [savedProfile.firstName, savedProfile.lastName]
+          .filter(Boolean)
+          .join(" ")
       : "",
     address_line1: savedProfile?.addressLine1 ?? "",
     address_line2: savedProfile?.apartment ?? "",
@@ -187,15 +225,14 @@ const Checkout: React.FC = () => {
   }, [cartItems]);
 
   const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
   }, [items]);
 
   const itemCount = useMemo(() => {
     return items.reduce((sum, item) => sum + item.quantity, 0);
-  }, [items]);
-
-  const hasGiftItems = useMemo(() => {
-    return items.some((item) => Boolean(item.isGift));
   }, [items]);
 
   const onFieldChange =
@@ -255,35 +292,43 @@ const Checkout: React.FC = () => {
           postal_code: form.postal_code.trim(),
           country: form.country.trim(),
         },
-        shipping_amount: SHIPPING_AMOUNT,
       });
 
       const createdOrderId = Number(orderResponse.data?.id);
 
       if (!createdOrderId) {
-        throw new Error("Order id was not returned from backend.");
+        throw new Error("Could not create order.");
       }
 
       setOrderId(createdOrderId);
 
-      const intentResponse = await api.post("/orders/create-intent/", {
-        order_id: createdOrderId,
-      });
+      const intentResponse = await api.post(
+        "/orders/create-intent/",
+        {
+          order_id: createdOrderId,
+        }
+      );
 
-      const clientSecretValue = intentResponse.data?.client_secret;
+      const clientSecretValue =
+        intentResponse.data?.client_secret;
 
-      if (typeof clientSecretValue !== "string" || !clientSecretValue.trim()) {
-        throw new Error("Invalid client_secret received from backend.");
+      if (
+        typeof clientSecretValue !== "string" ||
+        !clientSecretValue.trim()
+      ) {
+        throw new Error("Payment initialization failed.");
       }
 
       setClientSecret(clientSecretValue);
 
       setTax(Number(intentResponse.data?.tax_amount) || 0);
+
       setTotal(
-        Number(intentResponse.data?.total_amount) || subtotal + SHIPPING_AMOUNT
+        Number(intentResponse.data?.total_amount) ||
+          subtotal + SHIPPING_AMOUNT
       );
     } catch (error) {
-      console.error("Checkout order error:", error);
+      console.error("Checkout error:", error);
       setErrorMsg(getErrorMessage(error));
     } finally {
       setLoading(false);
@@ -295,6 +340,19 @@ const Checkout: React.FC = () => {
   return (
     <main className="checkout" aria-labelledby={headingId}>
       <div className="checkout__inner">
+
+        <datalist id="country-options">
+          {COUNTRIES.map((country) => (
+            <option key={country} value={country} />
+          ))}
+        </datalist>
+
+        <datalist id="state-options">
+          {STATES.map((state) => (
+            <option key={state} value={state} />
+          ))}
+        </datalist>
+
         <div className="checkout__backWrap">
           <Link to="/cart" className="checkout__backLink">
             ← Go back to shopping cart
@@ -307,8 +365,8 @@ const Checkout: React.FC = () => {
           </h1>
 
           <p className="checkout__subtitle">
-            Review your items, enter your shipping details, and continue to
-            secure payment.
+            Review your items, enter your shipping details,
+            and continue to secure payment.
           </p>
         </header>
 
@@ -319,137 +377,139 @@ const Checkout: React.FC = () => {
           aria-atomic="true"
         >
           {orderId !== null && (
-            <div className="checkout__state">Order #{orderId} created.</div>
+            <div className="checkout__state">
+              Order #{orderId} created.
+            </div>
           )}
 
           {clientSecret && (
-            <div className="checkout__state">Payment is ready.</div>
+            <div className="checkout__state">
+              Payment is ready.
+            </div>
           )}
 
           {errorMsg && (
-            <div className="checkout__state checkout__state--error" role="alert">
+            <div
+              className="checkout__state checkout__state--error"
+              role="alert"
+            >
               {errorMsg}
             </div>
           )}
         </div>
 
         <div className="checkout__grid">
-          <section className="checkout__summary" aria-labelledby={summaryId}>
-            <h2 id={summaryId} className="checkout__sectionTitle">
+
+          <section
+            className="checkout__summary"
+            aria-labelledby={summaryId}
+          >
+            <h2
+              id={summaryId}
+              className="checkout__sectionTitle"
+            >
               Order summary
             </h2>
 
-            {items.length === 0 ? (
-              <div className="checkout__empty">
-                <p className="checkout__emptyText">Your cart is empty.</p>
+            <ul className="checkout__items" role="list">
+              {items.map((item) => {
+                const name =
+                  item.name?.trim() ||
+                  `Candle #${item.candle_id}`;
 
-                <Link to="/catalog" className="checkout__inlineLink">
-                  Go to catalog
-                </Link>
-              </div>
-            ) : (
-              <>
-                <ul className="checkout__items" role="list">
-                  {items.map((item) => {
-                    const name =
-                      item.name?.trim() || `Candle #${item.candle_id}`;
+                return (
+                  <li
+                    key={`${item.candle_id}-${item.variant_id}`}
+                    className="checkoutItem"
+                  >
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={name}
+                        className="checkoutItem__image"
+                      />
+                    ) : (
+                      <div
+                        className="checkoutItem__image checkoutItem__image--empty"
+                      />
+                    )}
 
-                    return (
-                      <li
-                        key={`${item.candle_id}-${item.variant_id}-${
-                          item.size ?? "default"
-                        }`}
-                        className="checkoutItem"
-                      >
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={name}
-                            className="checkoutItem__image"
-                            width="140"
-                            height="160"
-                            loading="eager"
-                            decoding="async"
-                          />
-                        ) : (
-                          <div
-                            className="checkoutItem__image checkoutItem__image--empty"
-                            aria-hidden="true"
-                          />
-                        )}
+                    <div className="checkoutItem__info">
+                      <h3 className="checkoutItem__name">
+                        {name}
+                      </h3>
 
-                        <div className="checkoutItem__info">
-                          <h3 className="checkoutItem__name">{name}</h3>
+                      {item.size && (
+                        <p className="checkoutItem__meta">
+                          Size: {item.size}
+                        </p>
+                      )}
 
-                          {item.size && (
-                            <p className="checkoutItem__meta">
-                              Size: {item.size}
-                            </p>
-                          )}
+                      <p className="checkoutItem__meta">
+                        Quantity: {item.quantity}
+                      </p>
 
-                          <p className="checkoutItem__meta">
-                            Quantity: {item.quantity}
-                          </p>
-
-                          {item.isGift && (
-                            <p className="checkoutItem__meta">
-                              Gift option: Yes — Free
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="checkoutItem__lineTotal">
-                          {money(item.price * item.quantity)}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                <div className="checkout__totals" aria-label="Order totals">
-                  <div className="checkout__totalRow">
-                    <span>Items</span>
-                    <span>{itemCount}</span>
-                  </div>
-
-                  <div className="checkout__totalRow">
-                    <span>Subtotal</span>
-                    <span>{money(subtotal)}</span>
-                  </div>
-
-                  {hasGiftItems && (
-                    <div className="checkout__totalRow">
-                      <span>Gift wrapping</span>
-                      <span>Free</span>
+                      {item.isGift && (
+                        <p className="checkoutItem__meta">
+                          Gift option included
+                        </p>
+                      )}
                     </div>
-                  )}
 
-                  <div className="checkout__totalRow">
-                    <span>Shipping</span>
-                    <span>{money(SHIPPING_AMOUNT)}</span>
-                  </div>
+                    <div className="checkoutItem__lineTotal">
+                      {money(item.price * item.quantity)}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
 
-                  <div className="checkout__totalRow">
-                    <span>Tax</span>
-                    <span>{tax === null ? "—" : money(tax)}</span>
-                  </div>
+            <div className="checkout__totals">
 
-                  <div className="checkout__totalRow checkout__totalRow--grand">
-                    <span>Total</span>
-                    <span>
-                      {total === null
-                        ? money(subtotal + SHIPPING_AMOUNT)
-                        : money(total)}
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
+              <div className="checkout__totalRow">
+                <span>Items</span>
+                <span>{itemCount}</span>
+              </div>
+
+              <div className="checkout__totalRow">
+                <span>Subtotal</span>
+                <span>{money(subtotal)}</span>
+              </div>
+
+              <div className="checkout__totalRow">
+                <span>Shipping</span>
+                <span>{money(SHIPPING_AMOUNT)}</span>
+              </div>
+
+              <div className="checkout__totalRow">
+                <span>Tax</span>
+                <span>
+                  {tax === null ? "—" : money(tax)}
+                </span>
+              </div>
+
+              <div className="checkout__totalRow checkout__totalRow--grand">
+                <span>Total</span>
+                <span>
+                  {total === null
+                    ? money(subtotal + SHIPPING_AMOUNT)
+                    : money(total)}
+                </span>
+              </div>
+            </div>
           </section>
 
-          <section className="checkout__formPanel" aria-labelledby={shippingId}>
-            <h2 id={shippingId} className="checkout__sectionTitle">
-              {showPayment ? "Payment" : "Shipping details"}
+          <section
+            className="checkout__formPanel"
+            aria-labelledby={shippingId}
+          >
+            <h2
+              id={shippingId}
+              className="checkout__sectionTitle"
+            >
+              {showPayment
+                ? "Payment"
+                : "Shipping details"}
             </h2>
 
             {!showPayment ? (
@@ -462,9 +522,13 @@ const Checkout: React.FC = () => {
                 noValidate
               >
                 <div className="checkoutForm__group">
-                  <label className="checkoutForm__label" htmlFor="checkout-full-name">
+                  <label
+                    className="checkoutForm__label"
+                    htmlFor="checkout-full-name"
+                  >
                     Full name
                   </label>
+
                   <input
                     id="checkout-full-name"
                     className="checkoutForm__input"
@@ -473,13 +537,18 @@ const Checkout: React.FC = () => {
                     value={form.full_name}
                     onChange={onFieldChange("full_name")}
                     disabled={loading}
+                    placeholder="John Smith"
                   />
                 </div>
 
                 <div className="checkoutForm__group">
-                  <label className="checkoutForm__label" htmlFor="checkout-address-1">
+                  <label
+                    className="checkoutForm__label"
+                    htmlFor="checkout-address-1"
+                  >
                     Street address
                   </label>
+
                   <input
                     id="checkout-address-1"
                     className="checkoutForm__input"
@@ -488,14 +557,20 @@ const Checkout: React.FC = () => {
                     value={form.address_line1}
                     onChange={onFieldChange("address_line1")}
                     disabled={loading}
+                    placeholder="123 Madison Ave"
                   />
                 </div>
 
                 <div className="checkoutForm__row">
+
                   <div className="checkoutForm__group">
-                    <label className="checkoutForm__label" htmlFor="checkout-address-2">
-                      Apt / unit
+                    <label
+                      className="checkoutForm__label"
+                      htmlFor="checkout-address-2"
+                    >
+                      Apt / Unit
                     </label>
+
                     <input
                       id="checkout-address-2"
                       className="checkoutForm__input"
@@ -504,13 +579,18 @@ const Checkout: React.FC = () => {
                       value={form.address_line2}
                       onChange={onFieldChange("address_line2")}
                       disabled={loading}
+                      placeholder="Apartment 4B"
                     />
                   </div>
 
                   <div className="checkoutForm__group">
-                    <label className="checkoutForm__label" htmlFor="checkout-city">
+                    <label
+                      className="checkoutForm__label"
+                      htmlFor="checkout-city"
+                    >
                       City
                     </label>
+
                     <input
                       id="checkout-city"
                       className="checkoutForm__input"
@@ -519,30 +599,42 @@ const Checkout: React.FC = () => {
                       value={form.city}
                       onChange={onFieldChange("city")}
                       disabled={loading}
+                      placeholder="New York"
                     />
                   </div>
                 </div>
 
                 <div className="checkoutForm__row">
+
                   <div className="checkoutForm__group">
-                    <label className="checkoutForm__label" htmlFor="checkout-state">
+                    <label
+                      className="checkoutForm__label"
+                      htmlFor="checkout-state"
+                    >
                       State / Region
                     </label>
+
                     <input
                       id="checkout-state"
                       className="checkoutForm__input"
                       type="text"
                       autoComplete="address-level1"
+                      list="state-options"
                       value={form.state}
                       onChange={onFieldChange("state")}
                       disabled={loading}
+                      placeholder="California"
                     />
                   </div>
 
                   <div className="checkoutForm__group">
-                    <label className="checkoutForm__label" htmlFor="checkout-postal-code">
+                    <label
+                      className="checkoutForm__label"
+                      htmlFor="checkout-postal-code"
+                    >
                       ZIP / Postal code
                     </label>
+
                     <input
                       id="checkout-postal-code"
                       className="checkoutForm__input"
@@ -551,35 +643,49 @@ const Checkout: React.FC = () => {
                       value={form.postal_code}
                       onChange={onFieldChange("postal_code")}
                       disabled={loading}
+                      placeholder="10001"
                     />
                   </div>
                 </div>
 
                 <div className="checkoutForm__group">
-                  <label className="checkoutForm__label" htmlFor="checkout-country">
+                  <label
+                    className="checkoutForm__label"
+                    htmlFor="checkout-country"
+                  >
                     Country
                   </label>
+
                   <input
                     id="checkout-country"
                     className="checkoutForm__input"
                     type="text"
                     autoComplete="country-name"
+                    list="country-options"
                     value={form.country}
                     onChange={onFieldChange("country")}
                     disabled={loading}
+                    placeholder="United States"
                   />
                 </div>
 
                 <button
                   type="submit"
                   className="checkout__button"
-                  disabled={loading || !canPreparePayment}
+                  disabled={
+                    loading || !canPreparePayment
+                  }
                 >
-                  {loading ? "Preparing payment..." : "Continue to payment"}
+                  {loading
+                    ? "Preparing payment..."
+                    : "Continue to payment"}
                 </button>
               </form>
             ) : stripePromise && stripeOptions ? (
-              <Elements stripe={stripePromise} options={stripeOptions}>
+              <Elements
+                stripe={stripePromise}
+                options={stripeOptions}
+              >
                 <CheckoutPaymentBlock
                   orderId={orderId!}
                   clientSecret={clientSecret}
