@@ -72,7 +72,7 @@ class OrderItemCreateSerializer(serializers.Serializer):
 
     def validate_variant_id(self, value):
         if value <= 0:
-            raise serializers.ValidationError("variant_id must be positive.")
+            raise serializers.ValidationError("Please select a valid candle option.")
         return value
 
 
@@ -88,17 +88,19 @@ class ShippingSerializer(serializers.Serializer):
     city = serializers.CharField(max_length=255)
     state = serializers.CharField(max_length=255)
     postal_code = serializers.CharField(max_length=32)
-    country = serializers.CharField(max_length=2, default="US")
+
+    country = serializers.CharField(
+        max_length=120,
+        default="United States",
+    )
 
     def validate_country(self, value: str) -> str:
-        v = (value or "").strip().upper()
+        country = (value or "").strip()
 
-        if len(v) != 2:
-            raise serializers.ValidationError(
-                "Country must be ISO 3166-1 alpha-2 (e.g., US)."
-            )
+        if not country:
+            raise serializers.ValidationError("Please enter your country.")
 
-        return v
+        return country
 
 
 class OrderCreateSerializer(serializers.Serializer):
@@ -139,9 +141,8 @@ class OrderCreateSerializer(serializers.Serializer):
         variant_map = {variant.id: variant for variant in variants}
 
         if len(variant_map) != len(variant_ids):
-            missing = sorted(set(variant_ids) - set(variant_map.keys()))
             raise serializers.ValidationError(
-                {"items": f"Some variant_id do not exist: {missing}"}
+                {"items": "Some items in your cart are no longer available."}
             )
 
         order = Order.objects.create(
@@ -158,7 +159,7 @@ class OrderCreateSerializer(serializers.Serializer):
             shipping_city=ship["city"].strip(),
             shipping_state=ship["state"].strip(),
             shipping_postal_code=ship["postal_code"].strip(),
-            shipping_country=ship["country"].strip().upper(),
+            shipping_country=ship["country"].strip(),
         )
 
         subtotal = Decimal("0.00")
@@ -171,15 +172,19 @@ class OrderCreateSerializer(serializers.Serializer):
 
             if not variant.is_active:
                 raise serializers.ValidationError(
-                    {"items": f"Variant is inactive: {candle.name} / {variant.size}"}
+                    {
+                        "items": (
+                            f"{candle.name} / {variant.size} is currently unavailable."
+                        )
+                    }
                 )
 
             if variant.stock_qty < qty:
                 raise serializers.ValidationError(
                     {
                         "items": (
-                            f"Not enough stock for: {candle.name} / "
-                            f"{variant.size} (variant id={variant_id})"
+                            f"Only {variant.stock_qty} left for "
+                            f"{candle.name} / {variant.size}."
                         )
                     }
                 )

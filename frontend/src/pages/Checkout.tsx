@@ -59,18 +59,71 @@ function loadProfileFromStorage(): SavedProfile | null {
 }
 
 function getErrorMessage(error: unknown): string {
+  const fallback =
+    "Could not prepare payment. Please check your information and try again.";
+
   if (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error &&
-    typeof error.response === "object" &&
-    error.response !== null &&
-    "data" in error.response
+    typeof error !== "object" ||
+    error === null ||
+    !("response" in error) ||
+    typeof error.response !== "object" ||
+    error.response === null ||
+    !("data" in error.response)
   ) {
-    return JSON.stringify(error.response.data);
+    return fallback;
   }
 
-  return "Could not prepare payment. Please try again.";
+  const data = error.response.data;
+
+  if (typeof data === "string") {
+    return data;
+  }
+
+  if (typeof data !== "object" || data === null) {
+    return fallback;
+  }
+
+  const record = data as Record<string, unknown>;
+
+  const shipping = record.shipping;
+
+  if (typeof shipping === "object" && shipping !== null) {
+    const shippingRecord = shipping as Record<string, unknown>;
+
+    for (const value of Object.values(shippingRecord)) {
+      if (Array.isArray(value) && typeof value[0] === "string") {
+        return value[0];
+      }
+
+      if (typeof value === "string") {
+        return value;
+      }
+    }
+  }
+
+  const items = record.items;
+
+  if (Array.isArray(items) && typeof items[0] === "string") {
+    return items[0];
+  }
+
+  if (typeof items === "string") {
+    return items;
+  }
+
+  const detail = record.detail;
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  const errorMessage = record.error;
+
+  if (typeof errorMessage === "string") {
+    return errorMessage;
+  }
+
+  return fallback;
 }
 
 const SHIPPING_AMOUNT = 15;
@@ -112,7 +165,7 @@ const Checkout: React.FC = () => {
     city: savedProfile?.city ?? "",
     state: savedProfile?.state ?? "",
     postal_code: savedProfile?.postalCode ?? "",
-    country: savedProfile?.country ?? "US",
+    country: savedProfile?.country ?? "United States",
   });
 
   useEffect(() => {
@@ -200,7 +253,7 @@ const Checkout: React.FC = () => {
           city: form.city.trim(),
           state: form.state.trim(),
           postal_code: form.postal_code.trim(),
-          country: (form.country || "US").trim().toUpperCase(),
+          country: form.country.trim(),
         },
         shipping_amount: SHIPPING_AMOUNT,
       });
@@ -303,7 +356,9 @@ const Checkout: React.FC = () => {
 
                     return (
                       <li
-                        key={`${item.candle_id}-${item.variant_id}-${item.size ?? "default"}`}
+                        key={`${item.candle_id}-${item.variant_id}-${
+                          item.size ?? "default"
+                        }`}
                         className="checkoutItem"
                       >
                         {item.image ? (
@@ -471,7 +526,7 @@ const Checkout: React.FC = () => {
                 <div className="checkoutForm__row">
                   <div className="checkoutForm__group">
                     <label className="checkoutForm__label" htmlFor="checkout-state">
-                      State
+                      State / Region
                     </label>
                     <input
                       id="checkout-state"
@@ -486,7 +541,7 @@ const Checkout: React.FC = () => {
 
                   <div className="checkoutForm__group">
                     <label className="checkoutForm__label" htmlFor="checkout-postal-code">
-                      ZIP code
+                      ZIP / Postal code
                     </label>
                     <input
                       id="checkout-postal-code"
@@ -508,11 +563,10 @@ const Checkout: React.FC = () => {
                     id="checkout-country"
                     className="checkoutForm__input"
                     type="text"
-                    autoComplete="country"
+                    autoComplete="country-name"
                     value={form.country}
                     onChange={onFieldChange("country")}
                     disabled={loading}
-                    maxLength={2}
                   />
                 </div>
 
@@ -526,7 +580,10 @@ const Checkout: React.FC = () => {
               </form>
             ) : stripePromise && stripeOptions ? (
               <Elements stripe={stripePromise} options={stripeOptions}>
-                <CheckoutPaymentBlock orderId={orderId!} clientSecret={clientSecret} />
+                <CheckoutPaymentBlock
+                  orderId={orderId!}
+                  clientSecret={clientSecret}
+                />
               </Elements>
             ) : (
               <div className="checkout__state checkout__state--error">

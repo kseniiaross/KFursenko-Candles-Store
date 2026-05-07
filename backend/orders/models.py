@@ -58,7 +58,12 @@ class Order(models.Model):
     shipping_city = models.CharField(max_length=255, blank=True, default="")
     shipping_state = models.CharField(max_length=255, blank=True, default="")
     shipping_postal_code = models.CharField(max_length=32, blank=True, default="")
-    shipping_country = models.CharField(max_length=2, blank=True, default="US")
+
+    shipping_country = models.CharField(
+        max_length=120,
+        blank=True,
+        default="United States",
+    )
 
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True, default="")
     stripe_tax_calculation_id = models.CharField(max_length=255, blank=True, default="")
@@ -89,6 +94,7 @@ class Order(models.Model):
     def transition_to(self, new_status: str):
         if not self.can_transition(new_status):
             raise ValueError(f"Cannot transition from {self.status} to {new_status}")
+
         self.status = new_status
         self.save(update_fields=["status"])
 
