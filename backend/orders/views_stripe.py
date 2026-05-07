@@ -1,9 +1,8 @@
-import json
 import stripe
 
 from django.conf import settings
-from django.http import HttpResponse
 from django.db import transaction
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status, throttling
 from rest_framework.response import Response
@@ -63,7 +62,7 @@ class CreatePaymentIntentView(APIView):
                 intent = stripe.PaymentIntent.create(
                     amount=amount,
                     currency=order.currency or "usd",
-                    automatic_payment_methods={"enabled": True},
+                    payment_method_types=["card"],
                     metadata={
                         "order_id": str(order.id),
                         "user_id": str(request.user.id),
