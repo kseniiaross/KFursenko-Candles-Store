@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from candles.models import CandleVariant
 from .models import Cart, CartItem
@@ -40,10 +41,10 @@ class AddCartItemAPIView(generics.CreateAPIView):
         is_gift = bool(serializer.validated_data.get("is_gift", False))
 
         if not variant.is_active:
-            raise ValidationError({"variant_id": "This variant is not active."})
+            raise ValidationError({"variant_id": "This candle option is not available."})
 
         if variant.stock_qty < qty:
-            raise ValidationError({"quantity": "Not enough stock for this variant."})
+            raise ValidationError({"quantity": "Not enough stock for this candle option."})
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
@@ -53,8 +54,10 @@ class AddCartItemAPIView(generics.CreateAPIView):
 
         if not created:
             new_qty = item.quantity + qty
+
             if variant.stock_qty < new_qty:
-                raise ValidationError({"quantity": "Not enough stock for this variant."})
+                raise ValidationError({"quantity": "Not enough stock for this candle option."})
+
             item.quantity = new_qty
             item.is_gift = is_gift
             item.save(update_fields=["quantity", "is_gift"])
@@ -85,7 +88,7 @@ class UpdateCartItemAPIView(generics.UpdateAPIView):
         try:
             qty = int(qty)
         except (TypeError, ValueError):
-            raise ValidationError({"quantity": "Quantity must be an integer."})
+            raise ValidationError({"quantity": "Quantity must be a number."})
 
         if qty <= 0:
             item.delete()
@@ -93,7 +96,7 @@ class UpdateCartItemAPIView(generics.UpdateAPIView):
             return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
 
         if item.variant.stock_qty < qty:
-            raise ValidationError({"quantity": "Not enough stock for this variant."})
+            raise ValidationError({"quantity": "Not enough stock for this candle option."})
 
         item.quantity = qty
         item.is_gift = bool(is_gift)
@@ -111,6 +114,7 @@ class RemoveCartItemAPIView(generics.DestroyAPIView):
         item_id = kwargs.get("item_id")
 
         CartItem.objects.filter(id=item_id, cart=cart).delete()
+
         cart = _get_or_create_cart(request.user)
         return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
 
@@ -125,6 +129,7 @@ class MergeCartAPIView(generics.GenericAPIView):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         items = serializer.validated_data["items"]
 
         merged: dict[int, dict[str, int | bool]] = {}
@@ -141,17 +146,18 @@ class MergeCartAPIView(generics.GenericAPIView):
             merged[variant_id]["is_gift"] = bool(merged[variant_id]["is_gift"]) or is_gift
 
         variant_ids = list(merged.keys())
+
         variants = (
             CandleVariant.objects
             .select_for_update()
             .select_related("candle")
             .filter(id__in=variant_ids)
         )
+
         variant_map = {variant.id: variant for variant in variants}
 
         if len(variant_map) != len(variant_ids):
-            missing = sorted(set(variant_ids) - set(variant_map.keys()))
-            raise ValidationError({"items": f"Some variant_id do not exist: {missing}"})
+            raise ValidationError({"items": "Some items in your cart are no longer available."})
 
         for variant_id, payload in merged.items():
             variant = variant_map[variant_id]
@@ -160,7 +166,7 @@ class MergeCartAPIView(generics.GenericAPIView):
 
             if not variant.is_active:
                 raise ValidationError(
-                    {"items": f"Variant is inactive: {variant.candle.name} / {variant.size}"}
+                    {"items": f"{variant.candle.name} / {variant.size} is currently unavailable."}
                 )
 
             existing = CartItem.objects.filter(cart=cart, variant=variant).first()
@@ -168,7 +174,7 @@ class MergeCartAPIView(generics.GenericAPIView):
 
             if variant.stock_qty < final_qty:
                 raise ValidationError(
-                    {"items": f"Not enough stock for: {variant.candle.name} / {variant.size}"}
+                    {"items": f"Only {variant.stock_qty} left for {variant.candle.name} / {variant.size}."}
                 )
 
             if existing:
@@ -182,6 +188,17 @@ class MergeCartAPIView(generics.GenericAPIView):
                     quantity=qty,
                     is_gift=is_gift,
                 )
+
+        cart = _get_or_create_cart(request.user)
+        return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
+
+
+class ClearCartAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        cart = _get_or_create_cart(request.user)
+        CartItem.objects.filter(cart=cart).delete()
 
         cart = _get_or_create_cart(request.user)
         return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)

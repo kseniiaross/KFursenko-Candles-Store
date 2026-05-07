@@ -116,3 +116,8 @@ export async function mergeCart(payload: MergeCartPayload): Promise<CartLine[]> 
 
   return mapCartResponse(response.data);
 }
+
+export async function clearServerCart(): Promise<CartLine[]> {
+  const response = await api.delete<CartApiResponse>("/cart/clear/");
+  return mapCartResponse(response.data);
+}

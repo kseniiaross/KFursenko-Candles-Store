@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
+import { clearServerCart } from "../api/cart";
 import { clearCart } from "../store/cartSlice";
 import { useAppDispatch } from "../store/hooks";
 
@@ -13,14 +14,34 @@ const PaymentSuccess: React.FC = () => {
   const orderId = searchParams.get("order");
 
   useEffect(() => {
-    dispatch(clearCart());
+    let cancelled = false;
 
-    try {
-      localStorage.removeItem("guest_cart_items");
-      sessionStorage.removeItem("guest_cart_items");
-    } catch {
-      // Ignore storage errors.
+    async function clearAllCarts(): Promise<void> {
+      dispatch(clearCart());
+
+      try {
+        localStorage.removeItem("guest_cart_items");
+        sessionStorage.removeItem("guest_cart_items");
+      } catch {
+        // Ignore storage errors.
+      }
+
+      try {
+        await clearServerCart();
+
+        if (!cancelled) {
+          dispatch(clearCart());
+        }
+      } catch (error) {
+        console.error("Failed to clear server cart after payment:", error);
+      }
     }
+
+    void clearAllCarts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch]);
 
   return (
