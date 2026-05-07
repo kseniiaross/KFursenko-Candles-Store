@@ -1,17 +1,20 @@
 import React, { useState } from "react";
 import {
-  PaymentElement,
+  CardElement,
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
+
 import "../styles/CheckoutPaymentBlock.css";
 
 type CheckoutPaymentBlockProps = {
   orderId: number;
+  clientSecret: string;
 };
 
 const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
   orderId,
+  clientSecret,
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -19,30 +22,42 @@ const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState("");
 
-  const isDisabled = !stripe || !elements || paying;
+  const isDisabled = !stripe || !elements || !clientSecret || paying;
 
   const onPay = async (): Promise<void> => {
     if (isDisabled) return;
+
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      setPaymentError("Card field is not ready yet. Please try again.");
+      return;
+    }
 
     setPaymentError("");
     setPaying(true);
 
     try {
-      const returnUrl = `${window.location.origin}/payment/success?order=${encodeURIComponent(
-        String(orderId)
-      )}`;
-
-      const result = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: returnUrl,
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
         },
+        return_url: `${window.location.origin}/payment/success?order=${encodeURIComponent(
+          String(orderId)
+        )}`,
       });
 
       if (result.error) {
         setPaymentError(
           result.error.message ?? "Payment failed. Please try again."
         );
+        return;
+      }
+
+      if (result.paymentIntent?.status === "succeeded") {
+        window.location.href = `/payment/success?order=${encodeURIComponent(
+          String(orderId)
+        )}`;
       }
     } catch (err) {
       console.error("Stripe error:", err);
@@ -55,7 +70,28 @@ const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
   return (
     <div className={`checkoutPay ${paying ? "is-loading" : ""}`}>
       <div className="checkoutPay__elementWrap">
-        <PaymentElement />
+        <label className="checkoutPay__label">Card details</label>
+
+        <div className="checkoutPay__cardBox">
+          <CardElement
+            options={{
+              hidePostalCode: true,
+              style: {
+                base: {
+                  fontSize: "16px",
+                  color: "#111111",
+                  fontFamily: "Times New Roman, Times, serif",
+                  "::placeholder": {
+                    color: "#777777",
+                  },
+                },
+                invalid: {
+                  color: "#b73a3a",
+                },
+              },
+            }}
+          />
+        </div>
       </div>
 
       <div
@@ -76,11 +112,7 @@ const CheckoutPaymentBlock: React.FC<CheckoutPaymentBlockProps> = ({
         onClick={onPay}
         disabled={isDisabled}
       >
-        {paying ? (
-          <span className="checkoutPay__spinner" />
-        ) : (
-          "Pay now"
-        )}
+        {paying ? <span className="checkoutPay__spinner" /> : "Pay now"}
       </button>
 
       <p className="checkoutPay__note">
