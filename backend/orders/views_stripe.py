@@ -1,3 +1,5 @@
+import logging
+
 import stripe
 
 from django.conf import settings
@@ -8,8 +10,10 @@ from rest_framework import permissions, status, throttling
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .emails import send_order_confirmation_email
 from .models import Order
 
+logger = logging.getLogger(__name__)
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -82,6 +86,8 @@ class CreatePaymentIntentView(APIView):
             )
 
         except Exception as error:
+            logger.exception("Stripe payment intent creation failed")
+
             return Response(
                 {"error": str(error)},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -114,10 +120,14 @@ def stripe_webhook(request):
     if event_type == "payment_intent.succeeded":
         intent_id = data["id"]
         order_id = data["metadata"].get("order_id")
+        should_send_email = False
+        order_to_email = None
 
         with transaction.atomic():
             order = (
                 Order.objects.select_for_update()
+                .select_related("user")
+                .prefetch_related("items")
                 .filter(
                     id=order_id,
                     stripe_payment_intent_id=intent_id,
@@ -125,9 +135,21 @@ def stripe_webhook(request):
                 .first()
             )
 
-            if order:
+            if order and order.status != Order.Status.PAID:
                 order.status = Order.Status.PAID
                 order.save(update_fields=["status", "updated_at"])
+
+                should_send_email = True
+                order_to_email = order
+
+        if should_send_email and order_to_email:
+            try:
+                send_order_confirmation_email(order_to_email)
+            except Exception:
+                logger.exception(
+                    "Order confirmation email failed for order_id=%s",
+                    order_to_email.id,
+                )
 
     if event_type == "payment_intent.payment_failed":
         intent_id = data["id"]
@@ -143,7 +165,7 @@ def stripe_webhook(request):
                 .first()
             )
 
-            if order:
+            if order and order.status != Order.Status.CANCELED:
                 order.status = Order.Status.CANCELED
                 order.save(update_fields=["status", "updated_at"])
 

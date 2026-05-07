@@ -11,16 +11,31 @@ class OrderItemReadSerializer(serializers.ModelSerializer):
     candle_id = serializers.IntegerField(source="candle.id", read_only=True)
     candle_name = serializers.CharField(source="candle.name", read_only=True)
 
+    price = serializers.DecimalField(
+        source="unit_price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+
+    line_total = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItem
         fields = (
             "id",
             "candle_id",
             "candle_name",
+            "product_name",
+            "price",
             "unit_price",
             "quantity",
+            "line_total",
             "is_gift",
         )
+
+    def get_line_total(self, obj):
+        return obj.line_total()
 
 
 class OrderReadSerializer(serializers.ModelSerializer):
