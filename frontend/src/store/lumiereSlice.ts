@@ -4,7 +4,8 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 
-import { lumiereReply } from "../api/lumiere";
+import { sendLumiereReply } from "../api/lumiere";
+
 import type {
   Locale,
   LumiereHistoryMessage,
@@ -37,11 +38,18 @@ type SendPayload = {
 
 /* ================= HELPERS ================= */
 
-const isBrowser = () => typeof window !== "undefined";
+const isBrowser = (): boolean => typeof window !== "undefined";
 
-const createId = () =>
-  crypto?.randomUUID?.() ??
-  `lumiere-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const createId = (): string => {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `lumiere-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
 
 const createMessage = (
   role: "user" | "assistant",
@@ -64,24 +72,24 @@ const readStorage = (): LumierePersistedState | null => {
     const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Partial<LumierePersistedState>;
 
     if (
       !parsed ||
-      !["en", "ru", "es", "fr"].includes(parsed.locale) ||
+      !["en", "ru", "es", "fr"].includes(String(parsed.locale)) ||
       typeof parsed.speak !== "boolean" ||
       !Array.isArray(parsed.messages)
     ) {
       return null;
     }
 
-    return parsed;
+    return parsed as LumierePersistedState;
   } catch {
     return null;
   }
 };
 
-const writeStorage = (state: LumiereState) => {
+const writeStorage = (state: LumiereState): void => {
   if (!isBrowser()) return;
 
   const data: LumierePersistedState = {
@@ -93,14 +101,19 @@ const writeStorage = (state: LumiereState) => {
 
   try {
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
-  } catch {}
+  } catch {
+    // Ignore storage failures.
+  }
 };
 
-const clearStorage = () => {
+const clearStorage = (): void => {
   if (!isBrowser()) return;
+
   try {
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  } catch {}
+  } catch {
+    // Ignore storage failures.
+  }
 };
 
 /* ================= INITIAL ================= */
@@ -124,7 +137,18 @@ export const sendLumiereMessage = createAsyncThunk<
   { rejectValue: string }
 >("lumiere/send", async (payload, thunkApi) => {
   try {
-    return await lumiereReply(payload);
+    const response = await sendLumiereReply({
+      text: payload.text,
+      locale: payload.locale,
+      userName: payload.userName,
+      page: payload.page ?? "",
+      history: payload.history,
+    });
+
+    return {
+      text: response.text,
+      suggestions: response.suggestions ?? [],
+    };
   } catch {
     return thunkApi.rejectWithValue("Request failed");
   }
@@ -136,89 +160,95 @@ const lumiereSlice = createSlice({
   name: "lumiere",
   initialState,
   reducers: {
-    toggle: (s) => {
-      s.isOpen = !s.isOpen;
+    toggle: (state) => {
+      state.isOpen = !state.isOpen;
     },
 
-    open: (s) => {
-      s.isOpen = true;
+    open: (state) => {
+      state.isOpen = true;
     },
 
-    close: (s) => {
-      s.isOpen = false;
+    close: (state) => {
+      state.isOpen = false;
     },
 
-    setLocale: (s, a: PayloadAction<Locale>) => {
-      s.locale = a.payload;
-      writeStorage(s);
+    setLocale: (state, action: PayloadAction<Locale>) => {
+      state.locale = action.payload;
+      writeStorage(state);
     },
 
-    setSpeak: (s, a: PayloadAction<boolean>) => {
-      s.speak = a.payload;
-      writeStorage(s);
+    setSpeak: (state, action: PayloadAction<boolean>) => {
+      state.speak = action.payload;
+      writeStorage(state);
     },
 
-    setUserName: (s, a: PayloadAction<string | null>) => {
-      s.userName = a.payload;
-      writeStorage(s);
+    setUserName: (state, action: PayloadAction<string | null>) => {
+      state.userName = action.payload;
+      writeStorage(state);
     },
 
-    addUserMessage: (s, a: PayloadAction<string>) => {
-      s.messages.push(createMessage("user", a.payload));
-      writeStorage(s);
+    addUserMessage: (state, action: PayloadAction<string>) => {
+      state.messages.push(createMessage("user", action.payload));
+      writeStorage(state);
     },
 
     ensureGreeting: (
-      s,
-      a: PayloadAction<{ isLoggedIn: boolean; firstName: string | null }>
+      state,
+      action: PayloadAction<{ isLoggedIn: boolean; firstName: string | null }>
     ) => {
-      if (s.messages.length > 0) return;
+      if (state.messages.length > 0) return;
 
-      const name = a.payload.isLoggedIn ? a.payload.firstName : null;
+      const name = action.payload.isLoggedIn ? action.payload.firstName : null;
 
       const text =
-        s.locale === "ru"
+        state.locale === "ru"
           ? `Здравствуйте${name ? `, ${name}` : ""}. Я Lumière. Помогу подобрать свечу.`
           : `Hello${name ? `, ${name}` : ""}. I’m Lumière. I can help you choose a candle.`;
 
-      s.messages.push(createMessage("assistant", text));
+      state.messages.push(createMessage("assistant", text));
 
-      if (name && !s.userName) s.userName = name;
+      if (name && !state.userName) {
+        state.userName = name;
+      }
 
-      writeStorage(s);
+      writeStorage(state);
     },
 
-    clearConversation: (s) => {
-      s.messages = [];
-      s.status = "idle";
+    clearConversation: (state) => {
+      state.messages = [];
+      state.status = "idle";
       clearStorage();
     },
   },
 
   extraReducers: (builder) => {
     builder
-      .addCase(sendLumiereMessage.pending, (s) => {
-        s.status = "loading";
+      .addCase(sendLumiereMessage.pending, (state) => {
+        state.status = "loading";
       })
 
-      .addCase(sendLumiereMessage.fulfilled, (s, a) => {
-        s.status = "idle";
-        s.messages.push(
-          createMessage("assistant", a.payload.text, a.payload.suggestions)
+      .addCase(sendLumiereMessage.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.messages.push(
+          createMessage(
+            "assistant",
+            action.payload.text,
+            action.payload.suggestions
+          )
         );
-        writeStorage(s);
+        writeStorage(state);
       })
 
-      .addCase(sendLumiereMessage.rejected, (s) => {
-        s.status = "failed";
+      .addCase(sendLumiereMessage.rejected, (state) => {
+        state.status = "failed";
 
         const errorText =
-          s.locale === "ru"
+          state.locale === "ru"
             ? "Ошибка. Попробуйте снова."
             : "Something went wrong. Try again.";
 
-        s.messages.push(createMessage("assistant", errorText));
-        writeStorage(s);
+        state.messages.push(createMessage("assistant", errorText));
+        writeStorage(state);
       });
   },
 });
