@@ -130,7 +130,7 @@ const Checkout: React.FC = () => {
         quantity: Math.max(1, Number(item.quantity) || 1),
         price: Number(item.price) || 0,
       }))
-      .filter((item) => item.candle_id > 0);
+      .filter((item) => item.candle_id > 0 && item.variant_id > 0);
   }, [cartItems]);
 
   const subtotal = useMemo(() => {
@@ -189,7 +189,7 @@ const Checkout: React.FC = () => {
     try {
       const orderResponse = await api.post("/orders/", {
         items: items.map((item) => ({
-          candle_id: item.candle_id,
+          variant_id: item.variant_id,
           quantity: item.quantity,
           is_gift: Boolean(item.isGift),
         })),
@@ -226,7 +226,9 @@ const Checkout: React.FC = () => {
       setClientSecret(clientSecretValue);
 
       setTax(Number(intentResponse.data?.tax_amount) || 0);
-      setTotal(Number(intentResponse.data?.total_amount) || subtotal + SHIPPING_AMOUNT);
+      setTotal(
+        Number(intentResponse.data?.total_amount) || subtotal + SHIPPING_AMOUNT
+      );
     } catch (error) {
       console.error("Checkout order error:", error);
       setErrorMsg(getErrorMessage(error));
