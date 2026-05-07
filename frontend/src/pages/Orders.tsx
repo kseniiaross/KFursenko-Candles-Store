@@ -7,9 +7,12 @@ import "../styles/Orders.css";
 type OrderItem = {
   id: number;
   product_name?: string;
+  candle_name?: string;
   quantity?: number;
   price?: string | number;
+  unit_price?: string | number;
   line_total?: string | number;
+  is_gift?: boolean;
 };
 
 type Order = {
@@ -44,7 +47,6 @@ function safeNumber(value: unknown): number {
 }
 
 function extractOrders(data: unknown): Order[] {
-  // DRF may return either a plain array or a paginated object with `results`.
   if (Array.isArray(data)) {
     return data as Order[];
   }
@@ -86,13 +88,9 @@ function formatMoney(amount: number, currency?: string): string {
 function getOrderDisplayId(order: Order): string {
   const publicId = safeString(order.public_id).trim();
 
-  if (publicId) {
-    return publicId;
-  }
+  if (publicId) return publicId;
 
-  if (typeof order.id === "number") {
-    return String(order.id);
-  }
+  if (typeof order.id === "number") return String(order.id);
 
   if (typeof order.id === "string" && order.id.trim()) {
     return order.id.trim();
@@ -104,9 +102,7 @@ function getOrderDisplayId(order: Order): string {
 function getStatusLabel(status: string): string {
   const normalized = status.trim();
 
-  if (!normalized) {
-    return "Processing";
-  }
+  if (!normalized) return "Processing";
 
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
@@ -124,18 +120,14 @@ const Orders: React.FC = () => {
       setError("");
 
       try {
-        const response = await api.get("/orders/");
+        const response = await api.get("/orders/my/");
 
-        if (isCancelled) {
-          return;
-        }
+        if (isCancelled) return;
 
-        const extractedOrders = extractOrders(response?.data);
+        const extractedOrders = extractOrders(response.data);
         setOrders(extractedOrders);
       } catch {
-        if (isCancelled) {
-          return;
-        }
+        if (isCancelled) return;
 
         setOrders([]);
         setError("We couldn't load your orders right now. Please try again.");
@@ -168,7 +160,8 @@ const Orders: React.FC = () => {
             </h1>
 
             <p className="ordersPage__subtitle">
-              Review your recent purchases, order status, and item details in one place.
+              Review your recent purchases, order status, and item details in
+              one place.
             </p>
           </div>
 
@@ -186,7 +179,12 @@ const Orders: React.FC = () => {
         </header>
 
         {loading ? (
-          <section className="ordersPanel" role="status" aria-live="polite" aria-atomic="true">
+          <section
+            className="ordersPanel"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <p className="ordersPanel__text">Loading your orders...</p>
           </section>
         ) : null}
@@ -216,14 +214,12 @@ const Orders: React.FC = () => {
             </h2>
 
             <p className="ordersPanel__text">
-              When you place an order, it will appear here with status and item details.
+              When you place an order, it will appear here with status and item
+              details.
             </p>
 
             <div className="ordersPanel__actions">
-              <Link
-                to="/catalog"
-                className="ordersButton ordersButton--primary"
-              >
+              <Link to="/catalog" className="ordersButton ordersButton--primary">
                 Browse candles
               </Link>
 
@@ -264,11 +260,13 @@ const Orders: React.FC = () => {
                       <p className="orderCard__eyebrow">Order</p>
 
                       <h2 id={`order-title-${index}`} className="orderCard__id">
-                        {orderDisplayId}
+                        #{orderDisplayId}
                       </h2>
 
                       {createdAt ? (
-                        <p className="orderCard__date">{formatDate(createdAt)}</p>
+                        <p className="orderCard__date">
+                          {formatDate(createdAt)}
+                        </p>
                       ) : null}
                     </div>
 
@@ -298,10 +296,15 @@ const Orders: React.FC = () => {
 
                       <ul className="orderCard__list">
                         {items.slice(0, 6).map((item) => {
-                          const itemName = safeString(item.product_name).trim() || "Item";
+                          const itemName =
+                            safeString(item.product_name).trim() ||
+                            safeString(item.candle_name).trim() ||
+                            "Item";
+
                           const quantity = Math.max(1, safeNumber(item.quantity));
                           const lineTotal = safeNumber(item.line_total);
-                          const unitPrice = safeNumber(item.price);
+                          const unitPrice =
+                            safeNumber(item.price) || safeNumber(item.unit_price);
 
                           const displayAmount =
                             lineTotal > 0
@@ -311,10 +314,15 @@ const Orders: React.FC = () => {
                                 : "";
 
                           return (
-                            <li key={`${item.id}-${itemName}`} className="orderLine">
+                            <li
+                              key={`${item.id}-${itemName}`}
+                              className="orderLine"
+                            >
                               <span className="orderLine__name">{itemName}</span>
                               <span className="orderLine__qty">{quantity} ×</span>
-                              <span className="orderLine__price">{displayAmount}</span>
+                              <span className="orderLine__price">
+                                {displayAmount}
+                              </span>
                             </li>
                           );
                         })}
@@ -322,7 +330,8 @@ const Orders: React.FC = () => {
 
                       {items.length > 6 ? (
                         <p className="orderCard__more">
-                          + {items.length - 6} more item{items.length - 6 === 1 ? "" : "s"}
+                          + {items.length - 6} more item
+                          {items.length - 6 === 1 ? "" : "s"}
                         </p>
                       ) : null}
                     </div>

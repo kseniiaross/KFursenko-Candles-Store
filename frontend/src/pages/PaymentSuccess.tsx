@@ -1,28 +1,40 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+
+import { clearCart } from "../store/cartSlice";
+import { useAppDispatch } from "../store/hooks";
 
 import "../styles/PaymentSuccess.css";
 
 const PaymentSuccess: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const [searchParams] = useSearchParams();
+
+  const orderId = searchParams.get("order");
+
+  useEffect(() => {
+    dispatch(clearCart());
+
+    try {
+      localStorage.removeItem("guest_cart_items");
+      sessionStorage.removeItem("guest_cart_items");
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [dispatch]);
+
   return (
-    <main className="paymentSuccess" aria-labelledby="payment-success-title">
+    <main className="paymentSuccess">
       <div className="paymentSuccess__inner">
-        <section
-          className="paymentSuccess__card"
-          aria-describedby="payment-success-description"
-        >
+        <section className="paymentSuccess__card">
           <p className="paymentSuccess__kicker">Payment</p>
 
-          <h1 id="payment-success-title" className="paymentSuccess__title">
-            Payment successful
-          </h1>
+          <h1 className="paymentSuccess__title">Payment successful</h1>
 
-          <p
-            id="payment-success-description"
-            className="paymentSuccess__description"
-          >
-            Thank you. Your order has been confirmed successfully. You can
-            continue shopping or view your orders for the latest status.
+          <p className="paymentSuccess__description">
+            Thank you. Your order has been confirmed successfully.
+            {orderId ? ` Order #${orderId} is now being processed.` : ""}
+            You can continue shopping or view your orders for the latest status.
           </p>
 
           <div className="paymentSuccess__actions">
