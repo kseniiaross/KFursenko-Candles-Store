@@ -1,14 +1,14 @@
-// frontend/src/view/Checkout.tsx
-
 import React, { useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
+import type { StripeElementLocale } from "@stripe/stripe-js";
 
 import api from "../api/axiosInstance";
 import CheckoutPaymentBlock from "../components/CheckoutPaymentBlock";
 import { useAppSelector } from "../store/hooks";
 import { PROFILE_STORAGE_KEY } from "./Profile";
+import i18n from "../i18n";
 
 import "../styles/Checkout.css";
 
@@ -256,10 +256,20 @@ const Checkout: React.FC = () => {
   const showPayment = Boolean(clientSecret) && orderId !== null;
 
   const stripeOptions = useMemo(() => {
-    if (!clientSecret) return undefined;
+  if (!clientSecret) return undefined;
+
+    const currentLanguage = i18n.language?.split("-")[0];
+
+    const stripeLocale: StripeElementLocale =
+      currentLanguage === "ru" ||
+      currentLanguage === "es" ||
+      currentLanguage === "fr"
+        ? currentLanguage
+        : "en";
 
     return {
       clientSecret,
+      locale: stripeLocale,
       appearance: {
         theme: "stripe" as const,
       },
