@@ -14,9 +14,7 @@ body,
    ===================================================== */
 
 :root {
-
   /* COLORS */
-
   --color-bg: #f6f1ea;
   --color-text-primary: #1a1a1a;
   --color-text-secondary: rgba(17, 17, 17, 0.7);
@@ -26,20 +24,17 @@ body,
   --color-surface-glass: rgba(244, 236, 223, 0.78);
 
   /* GLOBAL FONT */
-
   --font-primary: "Times New Roman", Times, serif;
 }
 
 [data-theme="dark"] {
+  --color-bg: #8f8a84;
+  --color-text-primary: #f7f1e8;
+  --color-text-secondary: rgba(247, 241, 232, 0.78);
+  --color-border: rgba(255, 255, 255, 0.2);
 
-  --color-bg: #120d0a;
-  --color-text-primary: #f5efe8;
-  --color-text-secondary: rgba(245, 239, 232, 0.75);
-  --color-border: rgba(255, 255, 255, 0.18);
-
-  --color-surface: rgba(20, 16, 14, 0.6);
-  --color-surface-glass: rgba(20, 16, 14, 0.72);
-
+  --color-surface: rgba(80, 76, 70, 0.54);
+  --color-surface-glass: rgba(90, 86, 80, 0.68);
 }
 
 /* =====================================================
@@ -61,12 +56,42 @@ body {
 
   overflow-x: hidden;
 
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(
+      rgba(255, 252, 248, 0.78),
+      rgba(255, 252, 248, 0.78)
+    ),
+    url("./assets/images/lightmode1.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
   color: var(--color-text-primary);
 
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme="dark"] body {
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(
+      rgba(78, 74, 69, 0.72),
+      rgba(78, 74, 69, 0.72)
+    ),
+    url("./assets/images/darkmode1.webp");
+}
+
+/* =====================================================
+   HOME EXCEPTION
+   ===================================================== */
+
+body:has(.home) {
+  background-image: none;
+  background-color: transparent;
 }
 
 /* =====================================================
