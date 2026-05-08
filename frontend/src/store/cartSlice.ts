@@ -24,14 +24,16 @@ const STORAGE_KEY = "guest_cart_items";
 function normalizeCartLine(item: CartLine): CartLine {
   return {
     ...item,
+    item_id: item.item_id ? Number(item.item_id) : undefined,
     variant_id: Number(item.variant_id) || 0,
+    candle_id: Number(item.candle_id) || 0,
     quantity: Math.max(1, Number(item.quantity) || 1),
     price: Number(item.price) || 0,
     isGift: Boolean(item.isGift),
   };
 }
 
-function loadCart(): CartLine[] {
+function loadGuestCart(): CartLine[] {
   if (typeof window === "undefined") return [];
 
   try {
@@ -39,18 +41,17 @@ function loadCart(): CartLine[] {
     if (!raw) return [];
 
     const parsed: unknown = JSON.parse(raw);
-
     if (!Array.isArray(parsed)) return [];
 
     return parsed
       .map((item) => normalizeCartLine(item as CartLine))
-      .filter((item) => item.variant_id > 0);
+      .filter((item) => item.variant_id > 0 && item.candle_id > 0);
   } catch {
     return [];
   }
 }
 
-function saveCart(items: CartLine[]): void {
+function saveGuestCart(items: CartLine[]): void {
   if (typeof window === "undefined") return;
 
   try {
@@ -60,52 +61,62 @@ function saveCart(items: CartLine[]): void {
   }
 }
 
-function clearCartStorage(): void {
+function clearGuestCartStorageInternal(): void {
   if (typeof window === "undefined") return;
 
   try {
     localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   } catch {
     // Ignore storage failures.
   }
 }
 
 export function getGuestCartStorage(): CartLine[] {
-  return loadCart();
+  return loadGuestCart();
 }
 
 export function clearGuestCartStorage(): void {
-  clearCartStorage();
+  clearGuestCartStorageInternal();
 }
 
 /* ================= HELPERS ================= */
 
 function findIndex(items: CartLine[], variant_id: number): number {
-  return items.findIndex((item) => Number(item.variant_id) === variant_id);
+  return items.findIndex((item) => Number(item.variant_id) === Number(variant_id));
 }
 
 /* ================= SLICE ================= */
 
 const initialState: CartState = {
-  items: loadCart(),
+  items: loadGuestCart(),
 };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    // Important:
+    // setCart is for server cart / Redux memory.
+    // It must NOT save to guest localStorage.
     setCart: (state, action: PayloadAction<CartLine[]>) => {
       state.items = (action.payload ?? [])
         .map(normalizeCartLine)
-        .filter((item) => item.variant_id > 0);
+        .filter((item) => item.variant_id > 0 && item.candle_id > 0);
+    },
 
-      saveCart(state.items);
+    setGuestCart: (state, action: PayloadAction<CartLine[]>) => {
+      state.items = (action.payload ?? [])
+        .map(normalizeCartLine)
+        .filter((item) => item.variant_id > 0 && item.candle_id > 0);
+
+      saveGuestCart(state.items);
     },
 
     addToCart: (state, action: PayloadAction<CartLine>) => {
       const item = normalizeCartLine(action.payload);
 
-      if (!item.variant_id) return;
+      if (!item.variant_id || !item.candle_id) return;
 
       const idx = findIndex(state.items, item.variant_id);
 
@@ -115,7 +126,7 @@ const cartSlice = createSlice({
         state.items[idx].quantity += item.quantity;
       }
 
-      saveCart(state.items);
+      saveGuestCart(state.items);
     },
 
     updateQty: (
@@ -131,7 +142,7 @@ const cartSlice = createSlice({
       if (idx === -1) return;
 
       state.items[idx].quantity = Math.max(1, Number(action.payload.quantity) || 1);
-      saveCart(state.items);
+      saveGuestCart(state.items);
     },
 
     setGiftOption: (
@@ -147,7 +158,7 @@ const cartSlice = createSlice({
       if (idx === -1) return;
 
       state.items[idx].isGift = Boolean(action.payload.isGift);
-      saveCart(state.items);
+      saveGuestCart(state.items);
     },
 
     removeFromCart: (
@@ -162,18 +173,19 @@ const cartSlice = createSlice({
         (item) => Number(item.variant_id) !== variant_id
       );
 
-      saveCart(state.items);
+      saveGuestCart(state.items);
     },
 
     clearCart: (state) => {
       state.items = [];
-      clearCartStorage();
+      clearGuestCartStorageInternal();
     },
   },
 });
 
 export const {
   setCart,
+  setGuestCart,
   addToCart,
   updateQty,
   setGiftOption,

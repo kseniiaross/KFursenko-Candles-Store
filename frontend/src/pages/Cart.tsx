@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { deleteCartItem, patchCartItem } from "../api/cart";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
+  clearGuestCartStorage,
   removeFromCart,
   setCart,
   setGiftOption,
@@ -34,7 +35,8 @@ const Cart: React.FC = () => {
   const totalAmount = useMemo(() => {
     return items.reduce((sum, item) => {
       const price = Number(item.price) || 0;
-      const quantity = Number(item.quantity) || 1;
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+
       return sum + price * quantity;
     }, 0);
   }, [items]);
@@ -45,6 +47,8 @@ const Cart: React.FC = () => {
 
   const handleCheckout = (): void => {
     if (!items.length) return;
+
+    clearGuestCartStorage();
 
     if (!isLoggedIn) {
       navigate("/login-choice?next=/checkout");
@@ -59,6 +63,7 @@ const Cart: React.FC = () => {
     itemId?: number
   ): Promise<void> => {
     dispatch(removeFromCart({ variant_id: variantId }));
+    clearGuestCartStorage();
 
     if (!isLoggedIn || !itemId) return;
 
@@ -66,7 +71,9 @@ const Cart: React.FC = () => {
 
     try {
       const serverItems = await deleteCartItem(itemId);
+
       dispatch(setCart(serverItems));
+      clearGuestCartStorage();
     } catch (error) {
       console.error("Failed to remove cart item from backend:", error);
     } finally {
@@ -88,6 +95,8 @@ const Cart: React.FC = () => {
       })
     );
 
+    clearGuestCartStorage();
+
     if (!isLoggedIn || !itemId) return;
 
     setUpdatingId(variantId);
@@ -98,6 +107,7 @@ const Cart: React.FC = () => {
       });
 
       dispatch(setCart(serverItems));
+      clearGuestCartStorage();
     } catch (error) {
       console.error("Failed to update cart item quantity:", error);
     } finally {
@@ -117,6 +127,8 @@ const Cart: React.FC = () => {
       })
     );
 
+    clearGuestCartStorage();
+
     if (!isLoggedIn || !itemId) return;
 
     setUpdatingId(variantId);
@@ -127,6 +139,7 @@ const Cart: React.FC = () => {
       });
 
       dispatch(setCart(serverItems));
+      clearGuestCartStorage();
     } catch (error) {
       console.error("Failed to update gift option:", error);
     } finally {

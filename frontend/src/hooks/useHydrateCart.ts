@@ -6,6 +6,7 @@ import {
   clearGuestCartStorage,
   getGuestCartStorage,
   setCart,
+  setGuestCart,
 } from "../store/cartSlice";
 import type { CartLine } from "../store/cartSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -29,17 +30,16 @@ export function useHydrateCart(): void {
 
       if (!isLoggedIn || !token) {
         if (!cancelled) {
-          dispatch(setCart(guestItems));
+          dispatch(setGuestCart(guestItems));
         }
 
         return;
       }
 
-      const validGuestItems: CartLine[] = guestItems.filter((item: CartLine) => {
+      const validGuestItems: CartLine[] = guestItems.filter((item) => {
         return (
-          Number.isInteger(Number(item.variant_id)) &&
           Number(item.variant_id) > 0 &&
-          Number.isInteger(Number(item.quantity)) &&
+          Number(item.candle_id) > 0 &&
           Number(item.quantity) > 0
         );
       });
@@ -48,7 +48,7 @@ export function useHydrateCart(): void {
         if (validGuestItems.length > 0) {
           try {
             await mergeCart({
-              items: validGuestItems.map((item: CartLine) => ({
+              items: validGuestItems.map((item) => ({
                 variant_id: Number(item.variant_id),
                 quantity: Number(item.quantity),
                 is_gift: Boolean(item.isGift),
@@ -71,16 +71,16 @@ export function useHydrateCart(): void {
 
         const serverItems = await getMyCart();
 
-        if (!cancelled && serverItems.length > 0) {
+        if (!cancelled) {
           dispatch(setCart(serverItems));
-        } else if (!cancelled && validGuestItems.length > 0) {
-          dispatch(setCart(validGuestItems));
+          clearGuestCartStorage();
         }
       } catch (error: unknown) {
         console.error("Failed to hydrate cart:", error);
 
         if (!cancelled) {
-          dispatch(setCart(validGuestItems.length > 0 ? validGuestItems : guestItems));
+          dispatch(setCart([]));
+          clearGuestCartStorage();
         }
       }
     }
