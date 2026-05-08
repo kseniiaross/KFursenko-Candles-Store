@@ -63,10 +63,10 @@ body {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background-position: center;
+  background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
-  transform: scale(1.04);
+  transform: scale(1.02);
   pointer-events: none;
 }
 
@@ -79,8 +79,8 @@ body {
 }
 
 [data-theme="light"] .appShell--inner::before {
-  background-image: url("./assets/images/lightmode.jpg");
-  filter: blur(10px) brightness(1.04) saturate(0.96);
+  background-image: url("./assets/images/lightmode1.webp");
+  filter: blur(3px) brightness(1.04) saturate(0.98);
 }
 
 [data-theme="light"] .appShell--inner::after {
@@ -92,15 +92,15 @@ body {
 }
 
 [data-theme="dark"] .appShell--inner::before {
-  background-image: url("./assets/images/darkmode.jpg");
-  filter: blur(10px) brightness(0.72) saturate(0.92);
+  background-image: url("./assets/images/darkmode1.webp");
+  filter: blur(3px) brightness(0.92) saturate(0.96);
 }
 
 [data-theme="dark"] .appShell--inner::after {
   background: linear-gradient(
     180deg,
-    rgba(12, 8, 6, 0.5),
-    rgba(12, 8, 6, 0.4)
+    rgba(78, 74, 69, 0.66),
+    rgba(78, 74, 69, 0.58)
   );
 }
 
@@ -111,6 +111,6 @@ body {
 
 @media (max-width: 900px) {
   .appShell--inner::before {
-    transform: scale(1.06);
+    transform: scale(1.04);
   }
 }

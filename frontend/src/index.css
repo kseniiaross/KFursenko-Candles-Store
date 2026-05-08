@@ -14,7 +14,6 @@ body,
    ===================================================== */
 
 :root {
-  /* COLORS */
   --color-bg: #f6f1ea;
   --color-text-primary: #1a1a1a;
   --color-text-secondary: rgba(17, 17, 17, 0.7);
@@ -23,7 +22,6 @@ body,
   --color-surface: rgba(255, 255, 255, 0.6);
   --color-surface-glass: rgba(244, 236, 223, 0.78);
 
-  /* GLOBAL FONT */
   --font-primary: "Times New Roman", Times, serif;
 }
 
@@ -47,51 +45,16 @@ html {
 
 body {
   margin: 0;
-
   min-height: 100vh;
   min-height: 100dvh;
-
   font-family: var(--font-primary);
   line-height: 1.5;
-
   overflow-x: hidden;
-
-  background-color: var(--color-bg);
-  background-image:
-    linear-gradient(
-      rgba(255, 252, 248, 0.78),
-      rgba(255, 252, 248, 0.78)
-    ),
-    url("./assets/images/lightmode1.webp");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-
+  background: var(--color-bg);
   color: var(--color-text-primary);
-
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-[data-theme="dark"] body {
-  background-color: var(--color-bg);
-  background-image:
-    linear-gradient(
-      rgba(78, 74, 69, 0.72),
-      #4e4a45b8
-    ),
-    url("./assets/images/darkmode1.webp");
-}
-
-/* =====================================================
-   HOME EXCEPTION
-   ===================================================== */
-
-body:has(.home) {
-  background-image: none;
-  background-color: transparent;
 }
 
 /* =====================================================
