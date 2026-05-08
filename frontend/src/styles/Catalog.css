@@ -2,13 +2,9 @@
   --catalog-max-width: 1480px;
   --catalog-side-padding: 18px;
   --catalog-grid-gap-x: 18px;
-  --catalog-grid-gap-y: 24px;
+  --catalog-grid-gap-y: 22px;
   --catalog-clear-width: 104px;
 }
-
-/* ======================================================
-   PAGE LAYOUT
-   ====================================================== */
 
 .catalog {
   width: 100%;
@@ -26,10 +22,6 @@
   min-width: 0;
   margin: 0 auto;
 }
-
-/* ======================================================
-   HEADER
-   ====================================================== */
 
 .catalog__header {
   margin-bottom: 12px;
@@ -55,10 +47,6 @@
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
-
-/* ======================================================
-   FILTERS
-   ====================================================== */
 
 .catalog__filters {
   display: grid;
@@ -204,10 +192,6 @@
   transform: none;
 }
 
-/* ======================================================
-   AI SEARCH PANEL
-   ====================================================== */
-
 .catalogAi {
   width: min(100%, 820px);
   margin: 22px 0 0;
@@ -252,10 +236,6 @@
   line-height: 1.65;
 }
 
-/* ======================================================
-   DARK MODE
-   ====================================================== */
-
 [data-theme="dark"] .catalog__searchLine,
 [data-theme="dark"] .catalog__categoryInline {
   border-bottom-color: rgba(255, 255, 255, 0.32);
@@ -285,10 +265,6 @@
     );
 }
 
-/* ======================================================
-   STATUS
-   ====================================================== */
-
 .catalog__status {
   margin-bottom: 4px;
 }
@@ -301,20 +277,12 @@
   color: #c63d3d;
 }
 
-/* ======================================================
-   GRID
-   ====================================================== */
-
 .catalog__grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
-  margin-top: 24px;
+  margin-top: 22px;
 }
-
-/* ======================================================
-   CARD
-   ====================================================== */
 
 .catalogCard {
   display: flex;
@@ -358,13 +326,9 @@
 .catalogCard__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: rgba(245, 243, 239, 0.42);
-
-  contain: layout paint;
-  content-visibility: auto;
-  contain-intrinsic-size: 300px 225px;
 }
 
 .catalogCard__img {
@@ -376,7 +340,7 @@
 }
 
 .catalogCard__link:hover .catalogCard__img {
-  transform: scale(1.018);
+  transform: scale(1.012);
 }
 
 .catalogCard__badges {
@@ -457,20 +421,20 @@
   height: 1px;
 }
 
-/* ======================================================
-   LARGE DESKTOP — 1600+
-   ====================================================== */
-
 @media (min-width: 1600px) {
   :root {
     --catalog-max-width: 1520px;
     --catalog-side-padding: 18px;
     --catalog-grid-gap-x: 20px;
-    --catalog-grid-gap-y: 24px;
+    --catalog-grid-gap-y: 22px;
   }
 
   .catalog__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .catalogCard__media {
+    aspect-ratio: 16 / 9;
   }
 
   .catalogCard__name {
@@ -478,43 +442,39 @@
   }
 }
 
-/* ======================================================
-   DESKTOP — 1201–1599
-   ====================================================== */
-
 @media (max-width: 1599px) {
   :root {
     --catalog-max-width: 1360px;
     --catalog-side-padding: 18px;
     --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 24px;
+    --catalog-grid-gap-y: 22px;
   }
 
   .catalog__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-}
 
-/* ======================================================
-   SMALL DESKTOP / TABLET — <=1200
-   ====================================================== */
+  .catalogCard__media {
+    aspect-ratio: 16 / 9;
+  }
+}
 
 @media (max-width: 1200px) {
   :root {
     --catalog-max-width: 1080px;
     --catalog-side-padding: 18px;
     --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 24px;
+    --catalog-grid-gap-y: 22px;
   }
 
   .catalog__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-}
 
-/* ======================================================
-   TABLET — <=900
-   ====================================================== */
+  .catalogCard__media {
+    aspect-ratio: 16 / 9;
+  }
+}
 
 @media (max-width: 900px) {
   :root {
@@ -539,10 +499,6 @@
     width: 100%;
   }
 }
-
-/* ======================================================
-   MOBILE — <=600
-   ====================================================== */
 
 @media (max-width: 600px) {
   :root {
@@ -573,10 +529,6 @@
   }
 }
 
-/* ======================================================
-   REDUCED MOTION
-   ====================================================== */
-
 @media (prefers-reduced-motion: reduce) {
   .catalogCard__img,
   .catalogCard__btn,
@@ -590,15 +542,5 @@
   .catalog__clearInline:hover:not(:disabled),
   .catalog__aiButton:hover:not(:disabled) {
     transform: none;
-  }
-}
-
-/* ======================================================
-   FALLBACK
-   ====================================================== */
-
-@supports not (content-visibility: auto) {
-  .catalogCard__media {
-    contain: none;
   }
 }
