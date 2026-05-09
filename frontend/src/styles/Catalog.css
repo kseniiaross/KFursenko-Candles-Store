@@ -164,7 +164,7 @@
 .catalogCard__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 1.18 / 1;
+  aspect-ratio: 1.2 / 1;
   overflow: hidden;
   border-radius: var(--catalog-image-radius);
   background: rgba(245, 243, 239, 0.42);
@@ -283,6 +283,7 @@
   cursor: not-allowed;
 }
 
+/* 1600+ */
 @media (min-width: 1600px) {
   :root {
     --catalog-max-width: 1500px;
@@ -290,55 +291,16 @@
     --catalog-grid-gap-y: 28px;
   }
 
-  .catalog__grid {
-    margin-top: 18px;
-  }
-
   .catalogCard__media {
     aspect-ratio: 1.2 / 1;
   }
 }
 
+/* 1200–1599 */
 @media (max-width: 1599px) {
   :root {
     --catalog-max-width: 1360px;
     --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 20px;
-  }
-
-  .catalog {
-    padding-bottom: 64px;
-  }
-
-  .catalog__header {
-    margin-bottom: 10px;
-  }
-
-  .catalog__grid {
-    margin-top: 14px;
-  }
-
-  .catalogCard {
-    gap: 8px;
-  }
-
-  .catalogCard__body {
-    gap: 8px;
-  }
-
-  .catalogCard__media {
-    aspect-ratio: 1.25 / 1;
-  }
-
-  .catalogCard__btn {
-    min-height: 34px;
-  }
-}
-
-@media (max-width: 1200px) {
-  :root {
-    --catalog-max-width: 1080px;
-    --catalog-grid-gap-x: 16px;
     --catalog-grid-gap-y: 18px;
   }
 
@@ -346,12 +308,11 @@
     padding-bottom: 56px;
   }
 
-  .catalog__title {
-    font-size: clamp(2.1rem, 3vw, 2.7rem);
+  .catalog__header {
+    margin-bottom: 8px;
   }
 
   .catalog__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     margin-top: 12px;
   }
 
@@ -364,7 +325,7 @@
   }
 
   .catalogCard__media {
-    aspect-ratio: 1.32 / 1;
+    aspect-ratio: 1.45 / 1;
   }
 
   .catalogCard__btn {
@@ -372,6 +333,57 @@
   }
 }
 
+/* 900–1200 */
+@media (max-width: 1200px) {
+  :root {
+    --catalog-max-width: 1080px;
+    --catalog-grid-gap-x: 14px;
+    --catalog-grid-gap-y: 14px;
+  }
+
+  .catalog__header {
+    margin-bottom: 6px;
+  }
+
+  .catalog__title {
+    font-size: clamp(2rem, 3vw, 2.6rem);
+  }
+
+  .catalog__filters {
+    gap: 14px;
+  }
+
+  .catalog__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 10px;
+  }
+
+  .catalogCard {
+    gap: 6px;
+  }
+
+  .catalogCard__body {
+    gap: 6px;
+  }
+
+  .catalogCard__media {
+    aspect-ratio: 1.6 / 1;
+  }
+
+  .catalogCard__name {
+    font-size: 0.86rem;
+  }
+
+  .catalogCard__price {
+    font-size: 0.82rem;
+  }
+
+  .catalogCard__btn {
+    min-height: 30px;
+  }
+}
+
+/* 600–900 */
 @media (max-width: 900px) {
   :root {
     --catalog-side-padding: 16px;
@@ -396,6 +408,7 @@
   }
 }
 
+/* <=600 */
 @media (max-width: 600px) {
   :root {
     --catalog-side-padding: 14px;
