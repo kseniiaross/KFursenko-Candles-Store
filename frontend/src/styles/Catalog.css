@@ -4,9 +4,9 @@
   --catalog-side-padding: 18px;
 
   --catalog-grid-gap-x: 20px;
-  --catalog-grid-gap-y: 18px;
+  --catalog-grid-gap-y: 34px;
 
-  --catalog-card-height: 320px;
+  --catalog-card-height: 355px;
 
   --catalog-image-radius: 0px;
 }
@@ -21,7 +21,7 @@
 
   min-height: 100vh;
 
-  padding: 0 var(--catalog-side-padding) 56px;
+  padding: 0 var(--catalog-side-padding) 72px;
 
   font-family: "Times New Roman", Times, serif;
 
@@ -42,7 +42,7 @@
    ====================================================== */
 
 .catalog__header {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .catalog__topRow {
@@ -51,7 +51,7 @@
   align-items: flex-start;
   justify-content: flex-start;
 
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .catalog__headingGroup {
@@ -72,6 +72,8 @@
   letter-spacing: 0.03em;
 
   text-transform: uppercase;
+
+  color: #111111;
 }
 
 /* ======================================================
@@ -99,7 +101,7 @@
 }
 
 .catalog__label {
-  margin: 0 0 4px;
+  margin: 0 0 5px;
 
   font-size: 0.68rem;
   font-weight: 700;
@@ -117,16 +119,16 @@
 .catalog__categoryInline {
   width: 100%;
 
-  height: 30px;
+  height: 32px;
 
-  padding: 0 0 4px;
+  padding: 0 0 5px;
 
   border: none;
   border-bottom: 1px solid rgba(17, 17, 17, 0.34);
 
   background: transparent;
 
-  color: var(--app-text);
+  color: #111111;
 
   font-family: "Times New Roman", Times, serif;
 }
@@ -185,7 +187,7 @@
 
   grid-template-columns: 1fr;
 
-  gap: 5px;
+  gap: 6px;
 
   align-self: end;
 }
@@ -194,13 +196,13 @@
 .catalog__clearInline {
   width: 100%;
 
-  min-height: 32px;
+  min-height: 34px;
 
   border: none;
 
   background: transparent;
 
-  color: var(--app-text);
+  color: #111111;
 
   font-size: 0.66rem;
   font-weight: 700;
@@ -238,7 +240,7 @@
 
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
 
-  margin-top: 16px;
+  margin-top: 22px;
 }
 
 /* ======================================================
@@ -249,7 +251,7 @@
   display: flex;
   flex-direction: column;
 
-  gap: 6px;
+  gap: 12px;
 
   min-width: 0;
 
@@ -263,7 +265,7 @@
 .catalogCard__link:active {
   display: block;
 
-  color: var(--app-text);
+  color: #111111;
 
   text-decoration: none;
 }
@@ -322,7 +324,7 @@
 
   background: rgba(17, 17, 17, 0.94);
 
-  color: #fff;
+  color: #ffffff;
 
   font-size: 0.58rem;
   font-weight: 700;
@@ -344,7 +346,7 @@
   display: flex;
   flex-direction: column;
 
-  gap: 5px;
+  gap: 12px;
 }
 
 .catalogCard__metaRow {
@@ -354,16 +356,18 @@
 
   align-items: center;
 
-  gap: 10px;
+  gap: 12px;
 }
 
 .catalogCard__name {
   margin: 0;
 
-  font-size: 0.92rem;
+  color: #111111;
+
+  font-size: 0.94rem;
   font-weight: 700;
 
-  line-height: 1.1;
+  line-height: 1.15;
 
   text-transform: uppercase;
 
@@ -375,7 +379,9 @@
 .catalogCard__price {
   margin: 0;
 
-  font-size: 0.86rem;
+  color: #111111;
+
+  font-size: 0.88rem;
   font-weight: 700;
 
   line-height: 1.1;
@@ -384,16 +390,20 @@
 .catalogCard__btn {
   width: 100%;
 
-  min-height: 30px;
+  min-height: 34px;
 
-  border: 1px solid var(--app-border);
+  margin-top: 4px;
 
-  background: var(--app-surface);
+  border: 1px solid rgba(17, 17, 17, 0.12);
 
-  color: var(--app-text);
+  background: rgba(255, 255, 255, 0.45);
+
+  color: #111111;
 
   font-size: 0.62rem;
   font-weight: 700;
+
+  letter-spacing: 0.08em;
 
   text-transform: uppercase;
 
@@ -401,11 +411,15 @@
 
   transition:
     opacity 180ms ease,
-    border-color 180ms ease;
+    border-color 180ms ease,
+    background-color 180ms ease;
 }
 
-.catalogCard__btn:hover {
-  opacity: 0.82;
+.catalogCard__btn:hover,
+.catalogCard__btn:focus-visible {
+  background: rgba(255, 255, 255, 0.72);
+
+  border-color: rgba(17, 17, 17, 0.28);
 }
 
 /* ======================================================
@@ -418,9 +432,14 @@
 .catalog__clearInline:focus-visible,
 .catalogCard__link:focus-visible,
 .catalogCard__btn:focus-visible {
-  outline: 2px solid rgba(17, 17, 17, 0.88);
+  outline: 2px solid rgba(17, 17, 17, 0.9);
 
   outline-offset: 3px;
+}
+
+.catalogCard__btn:focus-visible {
+  position: relative;
+  z-index: 5;
 }
 
 [data-theme="dark"] .catalog__searchLine:focus-visible,
@@ -469,9 +488,9 @@
     --catalog-max-width: 1500px;
 
     --catalog-grid-gap-x: 22px;
-    --catalog-grid-gap-y: 20px;
+    --catalog-grid-gap-y: 36px;
 
-    --catalog-card-height: 340px;
+    --catalog-card-height: 375px;
   }
 }
 
@@ -484,9 +503,9 @@
     --catalog-max-width: 1360px;
 
     --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 18px;
+    --catalog-grid-gap-y: 34px;
 
-    --catalog-card-height: 315px;
+    --catalog-card-height: 350px;
   }
 }
 
@@ -498,7 +517,7 @@
   :root {
     --catalog-max-width: 1080px;
 
-    --catalog-card-height: 330px;
+    --catalog-card-height: 355px;
   }
 
   .catalog__grid {
@@ -515,7 +534,7 @@
     --catalog-side-padding: 16px;
 
     --catalog-grid-gap-x: 16px;
-    --catalog-grid-gap-y: 20px;
+    --catalog-grid-gap-y: 24px;
 
     --catalog-card-height: auto;
   }
@@ -563,7 +582,7 @@
   }
 
   .catalogCard__btn {
-    min-height: 42px;
+    min-height: 44px;
   }
 }
 
