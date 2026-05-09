@@ -503,9 +503,28 @@
     --catalog-max-width: 1360px;
 
     --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 34px;
 
-    --catalog-card-height: 350px;
+    /* WAS 34px */
+    --catalog-grid-gap-y: 24px;
+
+    /* WAS 350px */
+    --catalog-card-height: 338px;
+  }
+
+  .catalogCard {
+    gap: 9px;
+  }
+
+  .catalogCard__body {
+    gap: 8px;
+  }
+
+  .catalog__grid {
+    margin-top: 18px;
+  }
+
+  .catalogCard__btn {
+    margin-top: 2px;
   }
 }
 
