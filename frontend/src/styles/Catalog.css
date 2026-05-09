@@ -1,8 +1,8 @@
 :root {
   --catalog-max-width: 1480px;
   --catalog-side-padding: 18px;
-  --catalog-grid-gap-x: 18px;
-  --catalog-grid-gap-y: 22px;
+  --catalog-grid-gap-x: 20px;
+  --catalog-grid-gap-y: 32px;
   --catalog-clear-width: 104px;
 }
 
@@ -11,7 +11,7 @@
   min-width: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 0 var(--catalog-side-padding) 56px;
+  padding: 0 var(--catalog-side-padding) 72px;
   font-family: "Times New Roman", Times, serif;
   background: transparent;
   color: var(--app-text);
@@ -24,7 +24,7 @@
 }
 
 .catalog__header {
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 
 .catalog__topRow {
@@ -281,13 +281,13 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
-  margin-top: 22px;
+  margin-top: 28px;
 }
 
 .catalogCard {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -326,7 +326,7 @@
 .catalogCard__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: rgba(245, 243, 239, 0.42);
 }
@@ -336,11 +336,11 @@
   height: 100%;
   object-fit: contain;
   object-position: center center;
-  transition: transform 220ms ease;
+  transition: opacity 180ms ease;
 }
 
 .catalogCard__link:hover .catalogCard__img {
-  transform: scale(1.012);
+  opacity: 0.92;
 }
 
 .catalogCard__badges {
@@ -373,7 +373,7 @@
 .catalogCard__body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .catalogCard__metaRow {
@@ -402,7 +402,7 @@
 
 .catalogCard__btn {
   width: 100%;
-  min-height: 30px;
+  min-height: 34px;
   border: 1px solid var(--app-border);
   background: var(--app-surface);
   color: var(--app-text);
@@ -410,11 +410,11 @@
   font-weight: 700;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 160ms ease;
+  transition: opacity 160ms ease;
 }
 
 .catalogCard__btn:hover {
-  transform: translateY(-1px);
+  opacity: 0.78;
 }
 
 .catalog__loadMoreTrigger {
@@ -423,18 +423,18 @@
 
 @media (min-width: 1600px) {
   :root {
-    --catalog-max-width: 1520px;
+    --catalog-max-width: 1500px;
     --catalog-side-padding: 18px;
-    --catalog-grid-gap-x: 20px;
-    --catalog-grid-gap-y: 22px;
+    --catalog-grid-gap-x: 24px;
+    --catalog-grid-gap-y: 34px;
+  }
+
+  .catalog {
+    padding-bottom: 90px;
   }
 
   .catalog__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .catalogCard__media {
-    aspect-ratio: 16 / 9;
   }
 
   .catalogCard__name {
@@ -446,16 +446,16 @@
   :root {
     --catalog-max-width: 1360px;
     --catalog-side-padding: 18px;
-    --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 22px;
+    --catalog-grid-gap-x: 22px;
+    --catalog-grid-gap-y: 34px;
+  }
+
+  .catalog {
+    padding-bottom: 90px;
   }
 
   .catalog__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .catalogCard__media {
-    aspect-ratio: 16 / 9;
   }
 }
 
@@ -463,24 +463,20 @@
   :root {
     --catalog-max-width: 1080px;
     --catalog-side-padding: 18px;
-    --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 22px;
+    --catalog-grid-gap-x: 20px;
+    --catalog-grid-gap-y: 32px;
   }
 
   .catalog__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .catalogCard__media {
-    aspect-ratio: 16 / 9;
   }
 }
 
 @media (max-width: 900px) {
   :root {
     --catalog-side-padding: 16px;
-    --catalog-grid-gap-x: 16px;
-    --catalog-grid-gap-y: 22px;
+    --catalog-grid-gap-x: 18px;
+    --catalog-grid-gap-y: 30px;
   }
 
   .catalog__filters {
@@ -504,15 +500,11 @@
   :root {
     --catalog-side-padding: 14px;
     --catalog-grid-gap-x: 14px;
-    --catalog-grid-gap-y: 24px;
+    --catalog-grid-gap-y: 28px;
   }
 
   .catalog__grid {
     grid-template-columns: 1fr;
-  }
-
-  .catalogCard__media {
-    aspect-ratio: 4 / 3;
   }
 
   .catalogCard__btn {
@@ -541,6 +533,7 @@
   .catalogCard__btn:hover,
   .catalog__clearInline:hover:not(:disabled),
   .catalog__aiButton:hover:not(:disabled) {
+    opacity: 1;
     transform: none;
   }
 }
