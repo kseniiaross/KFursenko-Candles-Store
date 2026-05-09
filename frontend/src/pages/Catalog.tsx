@@ -8,8 +8,10 @@ import {
   getLowestActiveVariant,
   isCandleAvailable,
 } from "../types/candle";
+
 import { listCandles, listCategories } from "../api/candles";
 import { searchWithLumiere } from "../api/lumiere";
+
 import { useAppDispatch } from "../store/hooks";
 import { openSizeModal } from "../store/modalSlice";
 
@@ -21,7 +23,10 @@ const AI_SEARCH_LIMIT = 8;
 
 function normalizeBadges(badges?: CandleBadge[]): CandleBadge[] {
   if (!Array.isArray(badges)) return [];
-  return [...badges].sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
+
+  return [...badges].sort(
+    (a, b) => (a.priority ?? 999) - (b.priority ?? 999)
+  );
 }
 
 function buildOptimizedImageUrl(url: string, width: number): string {
@@ -43,24 +48,19 @@ const Catalog: React.FC = () => {
   const dispatch = useAppDispatch();
   const { categorySlug } = useParams<{ categorySlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const debounceRef = useRef<number | null>(null);
-
   const [categories, setCategories] = useState<Category[]>([]);
   const [candles, setCandles] = useState<Candle[]>([]);
-  const [visibleCount, setVisibleCount] = useState<number>(ITEMS_PER_BATCH);
+  const [visibleCount, setVisibleCount] =
+    useState<number>(ITEMS_PER_BATCH);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMode, setAiMode] = useState(false);
-  const [aiText, setAiText] = useState("");
-  const [aiQuery, setAiQuery] = useState("");
-
   const q = searchParams.get("q") ?? "";
   const categoryParam = searchParams.get("category") ?? "";
-
   const [searchInput, setSearchInput] = useState(q);
 
   useEffect(() => {
@@ -69,6 +69,7 @@ const Catalog: React.FC = () => {
 
   const categoryId = useMemo(() => {
     const numericValue = Number(categoryParam);
+
     return Number.isFinite(numericValue) && numericValue > 0
       ? numericValue
       : undefined;
@@ -83,6 +84,7 @@ const Catalog: React.FC = () => {
 
     debounceRef.current = window.setTimeout(() => {
       const next = new URLSearchParams(searchParams);
+
       const cleanSearch = searchInput.trim();
 
       if (cleanSearch) {
@@ -109,7 +111,9 @@ const Catalog: React.FC = () => {
 
       try {
         setLoading(true);
+
         setError("");
+
         setVisibleCount(ITEMS_PER_BATCH);
 
         let categoriesData: Category[] = [];
@@ -127,7 +131,9 @@ const Catalog: React.FC = () => {
         }
 
         const resolvedCategoryId = categorySlug
-          ? categoriesData.find((category) => category.slug === categorySlug)?.id
+          ? categoriesData.find(
+              (category) => category.slug === categorySlug
+            )?.id
           : categoryId;
 
         const candlesData = await listCandles({
@@ -167,6 +173,7 @@ const Catalog: React.FC = () => {
     if (!hasMoreCandles || loading || error) return;
 
     const target = loadMoreRef.current;
+
     if (!target) return;
 
     const observer = new IntersectionObserver(
@@ -191,17 +198,18 @@ const Catalog: React.FC = () => {
     };
   }, [candles.length, error, hasMoreCandles, loading]);
 
-  const updateParams = (updater: (next: URLSearchParams) => void): void => {
+  const updateParams = (
+    updater: (next: URLSearchParams) => void
+  ): void => {
     const next = new URLSearchParams(searchParams);
+
     updater(next);
+
     setSearchParams(next, { replace: true });
   };
 
   const onCategoryChange = (value: string): void => {
     setAiMode(false);
-    setAiText("");
-    setAiQuery("");
-
     updateParams((next) => {
       if (value) {
         next.set("category", value);
@@ -214,10 +222,7 @@ const Catalog: React.FC = () => {
   const clearFilters = (): void => {
     setSearchInput("");
     setAiMode(false);
-    setAiText("");
-    setAiQuery("");
     setError("");
-
     updateParams((next) => {
       next.delete("q");
       next.delete("category");
@@ -233,8 +238,6 @@ const Catalog: React.FC = () => {
       setAiLoading(true);
       setLoading(true);
       setError("");
-      setAiText("");
-      setAiQuery(cleanQuery);
       setVisibleCount(ITEMS_PER_BATCH);
 
       const aiResponse = await searchWithLumiere(
@@ -243,12 +246,13 @@ const Catalog: React.FC = () => {
         true
       );
 
-      const suggestionIds = aiResponse.suggestions.map((item) => item.id);
+      const suggestionIds = aiResponse.suggestions.map(
+        (item) => item.id
+      );
 
       if (suggestionIds.length === 0) {
         setCandles([]);
         setAiMode(true);
-        setAiText(aiResponse.text ?? "");
         return;
       }
 
@@ -256,15 +260,15 @@ const Catalog: React.FC = () => {
         ordering: "-created_at",
       });
 
-      const candleMap = new Map(allCandles.map((candle) => [candle.id, candle]));
+      const candleMap = new Map(
+        allCandles.map((candle) => [candle.id, candle])
+      );
 
       const aiCandles = suggestionIds
         .map((id) => candleMap.get(id))
         .filter((candle): candle is Candle => Boolean(candle));
-
       setCandles(aiCandles);
       setAiMode(true);
-      setAiText(aiResponse.text ?? "");
     } catch {
       setError("Lumière AI Search could not complete. Please try again.");
     } finally {
@@ -279,6 +283,7 @@ const Catalog: React.FC = () => {
 
   const onAddToCart = (candle: Candle): void => {
     const variant = getLowestActiveVariant(candle);
+
     if (!variant) return;
 
     dispatch(openSizeModal(candle));
@@ -302,11 +307,15 @@ const Catalog: React.FC = () => {
             aria-label={t("catalog.filtersLabel")}
             onSubmit={(event) => {
               event.preventDefault();
+
               void runAiSearch();
             }}
           >
-            <div className="catalog__filterItem catalog__filterItem--search">
-              <label className="catalog__label" htmlFor="catalog-search">
+            <div className="catalog__filterItem">
+              <label
+                className="catalog__label"
+                htmlFor="catalog-search"
+              >
                 {t("catalog.searchLabel")}
               </label>
 
@@ -320,8 +329,6 @@ const Catalog: React.FC = () => {
 
                   if (aiMode) {
                     setAiMode(false);
-                    setAiText("");
-                    setAiQuery("");
                   }
                 }}
                 placeholder="Try: I want something cozy for reading at night"
@@ -329,8 +336,11 @@ const Catalog: React.FC = () => {
               />
             </div>
 
-            <div className="catalog__filterItem catalog__filterItem--category">
-              <label className="catalog__label" htmlFor="catalog-category">
+            <div className="catalog__filterItem">
+              <label
+                className="catalog__label"
+                htmlFor="catalog-category"
+              >
                 {t("catalog.categoryLabel")}
               </label>
 
@@ -339,13 +349,20 @@ const Catalog: React.FC = () => {
                   id="catalog-category"
                   className="catalog__categoryInline"
                   value={categoryParam}
-                  onChange={(event) => onCategoryChange(event.target.value)}
+                  onChange={(event) =>
+                    onCategoryChange(event.target.value)
+                  }
                   disabled={categories.length === 0 || aiLoading}
                 >
-                  <option value="">{t("catalog.allCategories")}</option>
+                  <option value="">
+                    {t("catalog.allCategories")}
+                  </option>
 
                   {categories.map((category) => (
-                    <option key={category.id} value={String(category.id)}>
+                    <option
+                      key={category.id}
+                      value={String(category.id)}
+                    >
                       {category.name}
                     </option>
                   ))}
@@ -372,41 +389,7 @@ const Catalog: React.FC = () => {
               </button>
             </div>
           </form>
-
-          {aiMode && (aiText || aiQuery) ? (
-            <section className="catalogAi" aria-live="polite">
-              <div className="catalogAi__eyebrow">Lumière AI Search</div>
-
-              {aiQuery ? (
-                <h2 className="catalogAi__query">“{aiQuery}”</h2>
-              ) : null}
-
-              {aiText ? <p className="catalogAi__text">{aiText}</p> : null}
-            </section>
-          ) : null}
         </header>
-
-        <div className="catalog__status" aria-live="polite" aria-atomic="true">
-          {loading ? (
-            <p className="catalog__state">
-              {aiLoading ? "Lumière is choosing candles..." : t("catalog.loading")}
-            </p>
-          ) : null}
-
-          {!loading && error ? (
-            <p className="catalog__state catalog__state--error" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          {!loading && !error && candles.length === 0 ? (
-            <p className="catalog__state">
-              {aiMode
-                ? "Lumière could not find a strong match. Try describing the mood, room, or scent family."
-                : "No matching candles found."}
-            </p>
-          ) : null}
-        </div>
 
         {!loading && !error && candles.length > 0 ? (
           <>
@@ -416,26 +399,45 @@ const Catalog: React.FC = () => {
             >
               {visibleCandles.map((product, index) => {
                 const coverUrl = product.image ?? "";
+
                 if (!coverUrl) return null;
 
-                const optimizedSmall = buildOptimizedImageUrl(coverUrl, 480);
-                const optimizedMedium = buildOptimizedImageUrl(coverUrl, 800);
-                const optimizedLarge = buildOptimizedImageUrl(coverUrl, 1200);
+                const optimizedSmall =
+                  buildOptimizedImageUrl(coverUrl, 480);
+
+                const optimizedMedium =
+                  buildOptimizedImageUrl(coverUrl, 800);
+
+                const optimizedLarge =
+                  buildOptimizedImageUrl(coverUrl, 1200);
 
                 const destination = `/catalog/item/${product.slug}`;
+
                 const badges = normalizeBadges(product.badges);
+
                 const available = isCandleAvailable(product);
+
                 const showSoldOut = !available;
-                const showBestseller = Boolean(product.is_bestseller);
+
+                const showBestseller = Boolean(
+                  product.is_bestseller
+                );
+
                 const displayPrice = getDisplayPrice(product);
-                const firstVariant = getLowestActiveVariant(product);
+
+                const firstVariant =
+                  getLowestActiveVariant(product);
+
                 const isPriorityImage = index === 0;
 
                 return (
-                  <article key={product.id} className="catalogCard">
+                  <article
+                    key={product.id}
+                    className="catalogCard"
+                  >
                     <Link
                       to={destination}
-                      className="catalogCard__link"
+                      className="catalogCard__imageLink"
                       aria-label={`Open ${product.name}`}
                     >
                       <div className="catalogCard__media">
@@ -446,17 +448,18 @@ const Catalog: React.FC = () => {
                           sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           alt={product.name}
                           loading={isPriorityImage ? "eager" : "lazy"}
-                          fetchPriority={isPriorityImage ? "high" : "auto"}
+                          fetchPriority={
+                            isPriorityImage ? "high" : "auto"
+                          }
                           decoding="async"
                           width={900}
                           height={600}
                         />
 
-                        {(showSoldOut || showBestseller || badges.length > 0) && (
-                          <div
-                            className="catalogCard__badges"
-                            aria-label={t("catalog.badgesLabel")}
-                          >
+                        {(showSoldOut ||
+                          showBestseller ||
+                          badges.length > 0) && (
+                          <div className="catalogCard__badges">
                             {showSoldOut ? (
                               <span className="badge badge--soldout">
                                 {t("catalog.soldOut")}
@@ -472,8 +475,7 @@ const Catalog: React.FC = () => {
                             {badges.map((badge) => (
                               <span
                                 key={badge.slug}
-                                className="badge badge--offer"
-                                title={badge.kind}
+                                className="badge"
                               >
                                 {badge.badge_text}
                               </span>
@@ -484,23 +486,28 @@ const Catalog: React.FC = () => {
                     </Link>
 
                     <div className="catalogCard__body">
-                      <Link
-                        to={destination}
-                        className="catalogCard__metaRow"
-                        aria-label={t("catalog.productMetaLabel")}
-                      >
-                        <h2 className="catalogCard__name">{product.name}</h2>
+                      <div className="catalogCard__metaRow">
+                        <Link
+                          to={destination}
+                          className="catalogCard__titleLink"
+                        >
+                          <h2 className="catalogCard__name">
+                            {product.name}
+                          </h2>
+                        </Link>
 
                         <div className="catalogCard__price">
-                          {displayPrice ? `$${displayPrice}` : "Select size"}
+                          {displayPrice
+                            ? `$${displayPrice}`
+                            : "Select size"}
                         </div>
-                      </Link>
+                      </div>
 
                       <div className="catalogCard__actions">
                         {showSoldOut ? (
                           <button
                             type="button"
-                            className="catalogCard__btn catalogCard__btn--notify"
+                            className="catalogCard__btn"
                           >
                             {t("catalog.notifyMe")}
                           </button>
