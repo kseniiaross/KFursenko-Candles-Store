@@ -1,12 +1,14 @@
 :root {
   --catalog-max-width: 1480px;
+
   --catalog-side-padding: 18px;
 
   --catalog-grid-gap-x: 20px;
-  --catalog-grid-gap-y: 16px;
+  --catalog-grid-gap-y: 18px;
 
-  --catalog-card-height: 285px;
-  --catalog-visible-rows: 2;
+  --catalog-card-height: 320px;
+
+  --catalog-image-radius: 0px;
 }
 
 /* ======================================================
@@ -17,10 +19,9 @@
   width: 100%;
   min-width: 0;
 
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 
-  padding: 0 var(--catalog-side-padding) 42px;
+  padding: 0 var(--catalog-side-padding) 56px;
 
   font-family: "Times New Roman", Times, serif;
 
@@ -30,6 +31,7 @@
 
 .catalog__inner {
   width: min(100%, var(--catalog-max-width));
+
   min-width: 0;
 
   margin: 0 auto;
@@ -40,15 +42,16 @@
    ====================================================== */
 
 .catalog__header {
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 
 .catalog__topRow {
   display: flex;
+
   align-items: flex-start;
   justify-content: flex-start;
 
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .catalog__headingGroup {
@@ -59,10 +62,15 @@
   margin: 0;
 
   font-family: "Times New Roman", Times, serif;
+
   font-size: clamp(2rem, 3vw, 3rem);
+
   font-weight: 700;
+
   line-height: 0.95;
+
   letter-spacing: 0.03em;
+
   text-transform: uppercase;
 }
 
@@ -79,6 +87,7 @@
     minmax(210px, 0.55fr);
 
   gap: 20px;
+
   align-items: end;
 }
 
@@ -94,8 +103,11 @@
 
   font-size: 0.68rem;
   font-weight: 700;
+
   line-height: 1.2;
+
   letter-spacing: 0.16em;
+
   text-transform: uppercase;
 
   color: var(--app-text-muted);
@@ -104,6 +116,7 @@
 .catalog__searchLine,
 .catalog__categoryInline {
   width: 100%;
+
   height: 30px;
 
   padding: 0 0 4px;
@@ -114,6 +127,7 @@
   background: transparent;
 
   color: var(--app-text);
+
   font-family: "Times New Roman", Times, serif;
 }
 
@@ -123,12 +137,19 @@
 
 .catalog__categoryInline {
   font-size: 0.98rem;
+
   cursor: pointer;
+}
+
+.catalog__searchLine::placeholder {
+  color: var(--app-text-muted);
+  opacity: 0.85;
 }
 
 .catalog__searchLine:focus-visible,
 .catalog__categoryInline:focus-visible {
   outline: none;
+
   border-bottom-color: rgba(17, 17, 17, 0.88);
 }
 
@@ -140,6 +161,7 @@
   content: "";
 
   position: absolute;
+
   top: 50%;
   right: 2px;
 
@@ -160,6 +182,7 @@
 
 .catalog__actionsInline {
   display: grid;
+
   grid-template-columns: 1fr;
 
   gap: 5px;
@@ -170,16 +193,20 @@
 .catalog__aiButton,
 .catalog__clearInline {
   width: 100%;
-  min-height: 30px;
+
+  min-height: 32px;
 
   border: none;
+
   background: transparent;
 
   color: var(--app-text);
 
   font-size: 0.66rem;
   font-weight: 700;
+
   letter-spacing: 0.14em;
+
   text-transform: uppercase;
 
   cursor: pointer;
@@ -187,6 +214,7 @@
 
 .catalog__aiButton {
   border: 1px solid rgba(17, 17, 17, 0.32);
+
   border-radius: 999px;
 
   background:
@@ -210,14 +238,7 @@
 
   gap: var(--catalog-grid-gap-y) var(--catalog-grid-gap-x);
 
-  margin-top: 12px;
-
-  max-height: calc(
-    (var(--catalog-card-height) * var(--catalog-visible-rows)) +
-    var(--catalog-grid-gap-y)
-  );
-
-  overflow: hidden;
+  margin-top: 16px;
 }
 
 /* ======================================================
@@ -228,7 +249,7 @@
   display: flex;
   flex-direction: column;
 
-  gap: 4px;
+  gap: 6px;
 
   min-width: 0;
 
@@ -243,6 +264,7 @@
   display: block;
 
   color: var(--app-text);
+
   text-decoration: none;
 }
 
@@ -251,9 +273,11 @@
 
   width: 100%;
 
-  aspect-ratio: 16 / 9;
+  flex: 1;
 
   overflow: hidden;
+
+  border-radius: var(--catalog-image-radius);
 
   background: rgba(245, 243, 239, 0.42);
 }
@@ -262,21 +286,33 @@
   width: 100%;
   height: 100%;
 
-  object-fit: contain;
-  object-position: center center;
+  object-fit: cover;
+  object-position: center;
 
   display: block;
+
+  transition:
+    transform 220ms ease,
+    opacity 220ms ease;
+}
+
+.catalogCard__link:hover .catalogCard__img,
+.catalogCard__link:focus-visible .catalogCard__img {
+  transform: scale(1.015);
 }
 
 .catalogCard__badges {
   position: absolute;
-  top: 6px;
-  left: 6px;
+
+  top: 8px;
+  left: 8px;
 
   display: flex;
   flex-direction: column;
 
   gap: 4px;
+
+  z-index: 2;
 }
 
 .badge {
@@ -290,6 +326,7 @@
 
   font-size: 0.58rem;
   font-weight: 700;
+
   line-height: 1;
 
   text-transform: uppercase;
@@ -307,7 +344,7 @@
   display: flex;
   flex-direction: column;
 
-  gap: 4px;
+  gap: 5px;
 }
 
 .catalogCard__metaRow {
@@ -325,6 +362,7 @@
 
   font-size: 0.92rem;
   font-weight: 700;
+
   line-height: 1.1;
 
   text-transform: uppercase;
@@ -339,23 +377,87 @@
 
   font-size: 0.86rem;
   font-weight: 700;
+
   line-height: 1.1;
 }
 
 .catalogCard__btn {
   width: 100%;
-  min-height: 28px;
+
+  min-height: 30px;
 
   border: 1px solid var(--app-border);
 
   background: var(--app-surface);
+
   color: var(--app-text);
 
   font-size: 0.62rem;
   font-weight: 700;
+
   text-transform: uppercase;
 
   cursor: pointer;
+
+  transition:
+    opacity 180ms ease,
+    border-color 180ms ease;
+}
+
+.catalogCard__btn:hover {
+  opacity: 0.82;
+}
+
+/* ======================================================
+   ACCESSIBILITY
+   ====================================================== */
+
+.catalog__searchLine:focus-visible,
+.catalog__categoryInline:focus-visible,
+.catalog__aiButton:focus-visible,
+.catalog__clearInline:focus-visible,
+.catalogCard__link:focus-visible,
+.catalogCard__btn:focus-visible {
+  outline: 2px solid rgba(17, 17, 17, 0.88);
+
+  outline-offset: 3px;
+}
+
+[data-theme="dark"] .catalog__searchLine:focus-visible,
+[data-theme="dark"] .catalog__categoryInline:focus-visible,
+[data-theme="dark"] .catalog__aiButton:focus-visible,
+[data-theme="dark"] .catalog__clearInline:focus-visible,
+[data-theme="dark"] .catalogCard__link:focus-visible,
+[data-theme="dark"] .catalogCard__btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.92);
+}
+
+.catalog__aiButton:disabled,
+.catalog__clearInline:disabled,
+.catalogCard__btn:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+/* ======================================================
+   DARK
+   ====================================================== */
+
+[data-theme="dark"] .catalog__searchLine,
+[data-theme="dark"] .catalog__categoryInline {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .catalog__aiButton {
+  border-color: rgba(255, 255, 255, 0.24);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.04)
+    );
 }
 
 /* ======================================================
@@ -367,13 +469,9 @@
     --catalog-max-width: 1500px;
 
     --catalog-grid-gap-x: 22px;
-    --catalog-grid-gap-y: 16px;
+    --catalog-grid-gap-y: 20px;
 
-    --catalog-card-height: 292px;
-  }
-
-  .catalog__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --catalog-card-height: 340px;
   }
 }
 
@@ -386,13 +484,9 @@
     --catalog-max-width: 1360px;
 
     --catalog-grid-gap-x: 18px;
-    --catalog-grid-gap-y: 14px;
+    --catalog-grid-gap-y: 18px;
 
-    --catalog-card-height: 270px;
-  }
-
-  .catalog__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --catalog-card-height: 315px;
   }
 }
 
@@ -404,7 +498,7 @@
   :root {
     --catalog-max-width: 1080px;
 
-    --catalog-card-height: 262px;
+    --catalog-card-height: 330px;
   }
 
   .catalog__grid {
@@ -421,14 +515,9 @@
     --catalog-side-padding: 16px;
 
     --catalog-grid-gap-x: 16px;
-    --catalog-grid-gap-y: 18px;
+    --catalog-grid-gap-y: 20px;
 
     --catalog-card-height: auto;
-  }
-
-  .catalog {
-    height: auto;
-    overflow: visible;
   }
 
   .catalog__filters {
@@ -441,14 +530,14 @@
 
   .catalog__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-
-    max-height: none;
-
-    overflow: visible;
   }
 
   .catalogCard {
     height: auto;
+  }
+
+  .catalogCard__media {
+    aspect-ratio: 1 / 1;
   }
 }
 
@@ -487,14 +576,11 @@
   .catalogCard__btn,
   .catalog__clearInline,
   .catalog__aiButton {
-    transition: none;
+    transition: none !important;
   }
 
   .catalogCard__link:hover .catalogCard__img,
-  .catalogCard__btn:hover,
-  .catalog__clearInline:hover:not(:disabled),
-  .catalog__aiButton:hover:not(:disabled) {
-    opacity: 1;
+  .catalogCard__link:focus-visible .catalogCard__img {
     transform: none;
   }
 }
