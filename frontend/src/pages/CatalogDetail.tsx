@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { getCandleBySlug, getCollectionScentsBySlug } from "../api/candles";
@@ -24,6 +24,7 @@ const CatalogDetail: React.FC = () => {
   const [variant, setVariant] = useState<CandleVariant | null>(null);
   const [scents, setScents] = useState<Candle[]>([]);
   const [adding, setAdding] = useState(false);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -79,10 +80,33 @@ const CatalogDetail: React.FC = () => {
     };
   }, [slug, i18n.language]);
 
+  useEffect(() => {
+    if (!isZoomOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        setIsZoomOpen(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isZoomOpen]);
+
   const price = useMemo(() => {
     if (!variant) return 0;
     return Number(variant.price) || 0;
   }, [variant]);
+
+  const gallery = [
+    item?.image ?? "",
+    ...((item?.images ?? []).map((img) => img.image)),
+  ].filter(Boolean);
 
   const buildCartItem = () => {
     if (!item || !variant) return null;
@@ -112,7 +136,6 @@ const CatalogDetail: React.FC = () => {
     if (!cartItem) return;
 
     setAdding(true);
-
     dispatch(addToCart(cartItem));
 
     try {
@@ -136,54 +159,44 @@ const CatalogDetail: React.FC = () => {
 
   if (!item) return null;
 
-  const gallery = [
-    item.image ?? "",
-    ...(item.images ?? []).map((img) => img.image),
-  ].filter(Boolean);
-
   const variants = item.variants ?? [];
 
   return (
     <main className="catalogDetail" aria-label={t("catalogDetail.pageLabel")}>
       <div className="catalogDetail__inner">
         <div className="catalogDetail__layout">
-          <div className="catalogDetail__mediaColumn">
-            <div className="catalogDetail__mediaTopRow">
-              <Link to="/catalog" className="catalogDetail__back">
-                ← {t("catalogDetail.backToCatalog")}
-              </Link>
+          <section className="catalogDetail__mediaColumn" aria-label={item.name}>
+            <button
+              type="button"
+              className="catalogDetail__mainImgButton"
+              onClick={() => setIsZoomOpen(true)}
+              aria-label={`Open larger image of ${item.name}`}
+            >
+              <img
+                src={activeImg}
+                className="catalogDetail__mainImg"
+                alt={item.name}
+              />
+            </button>
+
+            <div className="catalogDetail__thumbs" aria-label="Product images">
+              {gallery.map((img) => (
+                <button
+                  key={img}
+                  type="button"
+                  onClick={() => setActiveImg(img)}
+                  className={`catalogDetail__thumb ${
+                    img === activeImg ? "is-active" : ""
+                  }`}
+                  aria-label={`${t("catalogDetail.selectImage")}: ${item.name}`}
+                >
+                  <img src={img} alt="" />
+                </button>
+              ))}
             </div>
+          </section>
 
-            <div className="catalogDetail__media">
-              <div className="catalogDetail__mainImgWrap">
-                <img
-                  src={activeImg}
-                  className="catalogDetail__mainImg"
-                  alt={item.name}
-                />
-              </div>
-
-              <div className="catalogDetail__thumbs">
-                {gallery.map((img) => (
-                  <button
-                    key={img}
-                    type="button"
-                    onClick={() => setActiveImg(img)}
-                    className={`catalogDetail__thumb ${
-                      img === activeImg ? "is-active" : ""
-                    }`}
-                    aria-label={`${t("catalogDetail.selectImage")}: ${
-                      item.name
-                    }`}
-                  >
-                    <img src={img} alt={item.name} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="catalogDetail__info">
+          <section className="catalogDetail__info">
             <h1 className="catalogDetail__title">{item.name}</h1>
 
             <p className="catalogDetail__price">${price.toFixed(2)}</p>
@@ -251,9 +264,42 @@ const CatalogDetail: React.FC = () => {
             >
               {adding ? "Adding..." : t("catalogDetail.addToCart")}
             </button>
-          </div>
+          </section>
         </div>
       </div>
+
+      {isZoomOpen && (
+        <div
+          className="catalogDetail__zoom"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Large image of ${item.name}`}
+        >
+          <button
+            type="button"
+            className="catalogDetail__zoomBackdrop"
+            onClick={() => setIsZoomOpen(false)}
+            aria-label="Close image preview"
+          />
+
+          <div className="catalogDetail__zoomContent">
+            <button
+              type="button"
+              className="catalogDetail__zoomClose"
+              onClick={() => setIsZoomOpen(false)}
+              aria-label="Close image preview"
+            >
+              ×
+            </button>
+
+            <img
+              src={activeImg}
+              className="catalogDetail__zoomImg"
+              alt={item.name}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 };
