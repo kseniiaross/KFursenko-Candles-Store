@@ -215,7 +215,7 @@ The result is not a demo application, but a functional foundation for a commerci
 ## Author
 
 Kseniia Rostovskaia  
-Full-Stack Developer | React, TypeScript, Django | AI Integration  
+Full-Stack Developer | AI Integration  
 
 Portfolio: https://kseniiaross.dev  
 LinkedIn: https://www.linkedin.com/in/kseniia-rostovskaia
