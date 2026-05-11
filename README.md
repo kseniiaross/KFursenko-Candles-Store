@@ -77,6 +77,44 @@ Together, the quiz and AI assistant reduce decision fatigue, increase user confi
 
 ---
 
+### AI Search & Smart Product Discovery
+
+The platform also includes an intelligent AI-powered search system designed to improve product discovery and create a more conversational shopping experience.
+
+Unlike traditional keyword-only search, the AI search understands:
+- scent-related phrases and mood descriptions
+- natural language requests
+- fragrance preferences and emotional intent
+
+Users can search using prompts such as:
+- “something calming for evenings”
+- “fresh citrus scent”
+- “gift for someone who likes spa vibes”
+- “warm cozy candle for winter”
+
+The AI system analyzes candle metadata, including:
+- fragrance families
+- mood tags
+- scent notes
+- collections
+- product descriptions
+- seasonal and atmosphere-related attributes
+
+Search results are then ranked and contextualized to provide more relevant and personalized recommendations.
+
+The system is integrated with the **Lumière AI Assistant**, allowing users to continue the experience conversationally and receive real-time guidance similar to an in-store luxury retail consultation.
+
+This approach improves:
+- product discoverability
+- user engagement
+- recommendation quality
+- conversion potential
+- accessibility for non-technical users unfamiliar with fragrance terminology
+
+By combining AI search, multilingual support, and conversational assistance, the platform delivers a more modern, intelligent, and user-centered shopping experience.
+
+---
+
 ## Technical Challenges & Solutions
 
 **1. Guest vs authenticated cart logic**  
